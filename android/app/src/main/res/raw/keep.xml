@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@drawable/ic_app_icon,@drawable/ic_notification_icon,@drawable/ic_splash_logo,@raw/adhan_abdul_basit,@raw/adhan_beautiful,@raw/adhan_madinah,@raw/adhan_makkah,@raw/adhan_minshawi,@raw/adhan_mishary_rashid_alafasy,@raw/adhan_nasser_al_qatami,@raw/adhan_yusuf_islam" />
