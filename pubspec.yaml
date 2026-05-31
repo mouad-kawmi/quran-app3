@@ -82,6 +82,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    - assets/branding/app_splash_icon.png
     - assets/tafsir/ar_tafsir_muyassar.json
 
   # To add assets to your application, add an assets section, like this:

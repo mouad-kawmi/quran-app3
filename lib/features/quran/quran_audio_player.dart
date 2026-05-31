@@ -216,11 +216,6 @@ class _QuranAudioPlayerState extends State<QuranAudioPlayer> {
     required int startVerse,
     required bool surahMode,
   }) async {
-    if (surahMode && _selectedReciter.supportsSurahDownload) {
-      await _startWholeSurahPlayback(surah);
-      return;
-    }
-
     final totalVerses = quran.getVerseCount(surah);
     if (startVerse < 1 || startVerse > totalVerses) {
       return;
@@ -250,44 +245,6 @@ class _QuranAudioPlayerState extends State<QuranAudioPlayer> {
     try {
       await _audioPlayer.setAudioSources(sources, preload: true);
       await _audioPlayer.play();
-    } catch (error) {
-      widget.controller?.clearHighlight();
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-        _isPlaying = false;
-        _errorMessage = _audioErrorMessage(error);
-      });
-    }
-  }
-
-  Future<void> _startWholeSurahPlayback(int surah) async {
-    final sourceUri = await QuranAudioStorage.playableSurahUri(
-      surah,
-      reciter: _selectedReciter,
-    );
-    final isLocalFile = sourceUri.isScheme('file');
-
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = null;
-        _isSurahMode = true;
-        _playlistSurah = surah;
-        _playlistVerses = const [1];
-        _currentVerse = 1;
-      });
-    }
-
-    widget.controller?.updateHighlight(surah, 1);
-
-    try {
-      await _audioPlayer.setAudioSource(AudioSource.uri(sourceUri, tag: 1));
-      await _audioPlayer.play();
-      if (!mounted) return;
-      setState(() {
-        _isDownloaded = _isDownloaded || isLocalFile;
-      });
     } catch (error) {
       widget.controller?.clearHighlight();
       if (!mounted) return;

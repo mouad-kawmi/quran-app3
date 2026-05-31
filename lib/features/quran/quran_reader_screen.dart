@@ -69,9 +69,26 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   }
 
   void _onAudioChanged() {
-    if (mounted) {
-      setState(() {});
+    if (!mounted) {
+      return;
     }
+
+    final playingSurah = _audioController.currentPlayingSurah;
+    final playingAyah = _audioController.currentPlayingVerse;
+    if (playingSurah != null && playingAyah != null) {
+      final targetPage = quran.getPageNumber(playingSurah, playingAyah);
+      if (targetPage != _currentPage && _pageController.hasClients) {
+        unawaited(
+          _pageController.animateToPage(
+            targetPage - 1,
+            duration: const Duration(milliseconds: 260),
+            curve: Curves.easeOutCubic,
+          ),
+        );
+      }
+    }
+
+    setState(() {});
   }
 
   void _onPageChanged(int index) {
@@ -296,7 +313,9 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
             border: Border.all(color: AppTheme.softBorderColor(context)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(AppTheme.isDark(context) ? 0.2 : 0.08),
+                color: Colors.black.withValues(
+                  alpha: AppTheme.isDark(context) ? 0.2 : 0.08,
+                ),
                 blurRadius: 14,
                 offset: const Offset(0, 6),
               ),
@@ -376,7 +395,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
               fontSize: 23,
               height: 2.15,
               backgroundColor: isHighlighted || isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.14)
+                  ? AppTheme.primaryColor.withValues(alpha: 0.14)
                   : null,
               color: isHighlighted || isSelected
                   ? AppTheme.primaryColor
@@ -411,7 +430,7 @@ class _SurahHeader extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withOpacity(0.08),
+        color: AppTheme.primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(

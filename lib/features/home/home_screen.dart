@@ -13,15 +13,15 @@ import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/adhkar/adhkar_screen.dart';
 import 'package:quran_app/features/adhan/adhan_settings_screen.dart';
 import 'package:quran_app/features/khatma/khatma_screen.dart';
-import 'package:quran_app/features/more/more_screen.dart';
 import 'package:quran_app/features/prayer_times/prayer_times_screen.dart';
 import 'package:quran_app/features/qibla/qibla_screen.dart';
 import 'package:quran_app/features/quran/quran_reader_screen.dart';
-import 'package:quran_app/features/quran/quran_search_screen.dart';
 import 'package:quran_app/features/quran/surah_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.onSelectMainTab});
+
+  final ValueChanged<int>? onSelectMainTab;
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -262,6 +262,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openSurahList() {
+    final onSelectMainTab = widget.onSelectMainTab;
+    if (onSelectMainTab != null) {
+      onSelectMainTab(1);
+      return;
+    }
+
     unawaited(_pushAndRefreshReading(const SurahListScreen()));
   }
 
@@ -273,15 +279,18 @@ class _HomeScreenState extends State<HomeScreen> {
     final khatma = _khatmaProgress;
     final nextPage = khatma?.nextPage;
     if (khatma?.hasPlan == true && nextPage != null) {
-      unawaited(_pushAndRefreshReading(KhatmaPageScreen(page: nextPage)));
+      unawaited(
+        _pushAndRefreshReading(
+          KhatmaPageScreen(
+            page: nextPage,
+            returnToKhatmaHomeOnBack: true,
+          ),
+        ),
+      );
       return;
     }
 
     _openKhatma();
-  }
-
-  void _openQuranSearch() {
-    unawaited(_pushAndRefreshReading(const QuranSearchScreen()));
   }
 
   void _openLastRead() {
@@ -565,7 +574,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: _buildBottomNav(),
       ),
     );
   }
@@ -582,7 +590,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -623,14 +631,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ],
-          ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.settings_outlined, color: Colors.white),
           ),
         ],
       ),
@@ -1187,10 +1187,18 @@ class _HomeScreenState extends State<HomeScreen> {
           Icons.access_time_filled_rounded,
           'الأذكار',
           'تحصين المسلم',
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AdhkarScreen()),
-          ),
+          onTap: () {
+            final onSelectMainTab = widget.onSelectMainTab;
+            if (onSelectMainTab != null) {
+              onSelectMainTab(3);
+              return;
+            }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdhkarScreen()),
+            );
+          },
         ),
         _buildServiceItem(
           Icons.explore_rounded,
@@ -1454,62 +1462,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildBottomNav() {
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
-        ],
-      ),
-      child: BottomNavigationBar(
-        onTap: (index) {
-          if (index == 1) {
-            _openSurahList();
-          } else if (index == 3) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AdhkarScreen()),
-            );
-          } else if (index == 2) {
-            _openQuranSearch();
-          } else if (index == 4) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const MoreScreen()),
-            );
-          }
-        },
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppTheme.isDark(context)
-            ? AppTheme.secondaryColor
-            : AppTheme.primaryColor,
-        unselectedItemColor: AppTheme.mutedTextColor(context),
-        currentIndex: 0,
-        backgroundColor: AppTheme.surfaceColor(context),
-        elevation: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled),
-            label: 'الرئيسية',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_rounded),
-            label: 'القرآن',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search_rounded),
-            label: 'البحث',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.access_time_rounded),
-            label: 'الأذكار',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_rounded),
-            label: 'المزيد',
-          ),
-        ],
-      ),
-    );
-  }
 }

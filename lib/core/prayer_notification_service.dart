@@ -89,7 +89,7 @@ class PrayerNotificationService {
   static const String _adhanChannelDescription =
       'تنبيهات وقت الصلاة مع صوت الأذان المختار.';
   static const String _notificationIconName = 'ic_notification_icon';
-  static const String _notificationLargeIconName = 'ic_app_icon';
+  static const String _notificationLargeIconName = 'app_brand_icon';
   static const Color _notificationColor = Color(0xFF004D40);
   static const Duration _adhanElapsedVisibility = Duration(minutes: 30);
   static const String _latitudeKey = 'prayer_reminder_latitude';
@@ -101,6 +101,8 @@ class PrayerNotificationService {
       'prayer_reminder_scheduled_longitude';
   static const String _lastScheduleOfficialKey =
       'prayer_reminder_scheduled_official';
+  static const String _lastScheduleAdhanSoundKey =
+      'prayer_reminder_scheduled_adhan_sound';
   static const String _adhanSoundKey = 'adhan_sound_id';
   static const String _adhanEnabledPrefix = 'adhan_enabled_';
   static const String _initialAdhanSetupPromptShownKey =
@@ -109,6 +111,8 @@ class PrayerNotificationService {
   static const String _customAdhanSoundNameKey = 'custom_adhan_sound_name';
   static const String _customAdhanSoundPathKey = 'custom_adhan_sound_path';
   static const String _customAdhanChannelId = 'adhan_alerts_custom_file_v1';
+  static const String _nativeAdhanNotificationChannelId =
+      'adhan_alerts_native_silent_v1';
   static const List<String> _legacyAdhanChannelIds = [
     'adhan_alerts_makkah_v1',
     'adhan_alerts_madinah_v1',
@@ -136,6 +140,15 @@ class PrayerNotificationService {
     'adhan_alerts_nasser_v3',
     'adhan_alerts_yusuf_islam_v3',
     'adhan_alerts_beautiful_v3',
+    'adhan_alerts_makkah_v4',
+    'adhan_alerts_madinah_v4',
+    'adhan_alerts_abdul_basit_v4',
+    'adhan_alerts_minshawi_v4',
+    'adhan_alerts_mishary_v4',
+    'adhan_alerts_nasser_v4',
+    'adhan_alerts_yusuf_islam_v4',
+    'adhan_alerts_beautiful_v4',
+    'adhan_alerts_custom_file_v1',
   ];
   static const AdhanSoundOption _defaultAdhanSound = AdhanSoundOption(
     id: 'makkah',
@@ -294,7 +307,7 @@ class PrayerNotificationService {
     } else {
       await prefs.setString(_adhanSoundKey, adhanSoundById(soundId).id);
     }
-    _queueAdhanRefresh();
+    await _rescheduleStoredAdhanAlerts();
   }
 
   static Future<List<AdhanSoundOption>> loadAvailableAdhanSounds() async {
@@ -347,7 +360,7 @@ class PrayerNotificationService {
     await prefs.setString(_customAdhanSoundPathKey, path);
     await prefs.setString(_adhanSoundKey, _customAdhanSoundId);
 
-    _queueAdhanRefresh();
+    await _rescheduleStoredAdhanAlerts();
     return loadCustomAdhanSound();
   }
 
@@ -718,6 +731,9 @@ class PrayerNotificationService {
         );
       }
     }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_lastScheduleAdhanSoundKey, adhanSettings.sound.id);
   }
 
   static Future<void> _initializeNotifications({
@@ -816,11 +832,14 @@ class PrayerNotificationService {
     final scheduledLatitude = prefs.getDouble(_lastScheduledLatitudeKey);
     final scheduledLongitude = prefs.getDouble(_lastScheduledLongitudeKey);
     final scheduledOfficial = prefs.getBool(_lastScheduleOfficialKey) ?? false;
+    final scheduledAdhanSound = prefs.getString(_lastScheduleAdhanSoundKey);
+    final currentAdhanSound = (await loadAdhanSettings()).sound.id;
 
     if (scheduledDay == null ||
         scheduledLatitude == null ||
         scheduledLongitude == null ||
-        !scheduledOfficial) {
+        !scheduledOfficial ||
+        scheduledAdhanSound != currentAdhanSound) {
       return false;
     }
 
@@ -841,6 +860,10 @@ class PrayerNotificationService {
     await prefs.setDouble(_lastScheduledLatitudeKey, coordinates.latitude);
     await prefs.setDouble(_lastScheduledLongitudeKey, coordinates.longitude);
     await prefs.setBool(_lastScheduleOfficialKey, isOfficial);
+    await prefs.setString(
+      _lastScheduleAdhanSoundKey,
+      (await loadAdhanSettings()).sound.id,
+    );
   }
 
   static int _scheduleDayId(DateTime date) {
@@ -1037,7 +1060,6 @@ class PrayerNotificationService {
     final bypassDnd = await _canBypassDnd();
     return NotificationDetails(
       android: _adhanAndroidDetails(
-        sound,
         prayerTime: prayerTime,
         bypassDnd: bypassDnd,
       ),
@@ -1058,17 +1080,16 @@ class PrayerNotificationService {
     return await android?.hasNotificationPolicyAccess() ?? false;
   }
 
-  static AndroidNotificationDetails _adhanAndroidDetails(
-    AdhanSoundOption sound, {
+  static AndroidNotificationDetails _adhanAndroidDetails({
     required DateTime prayerTime,
     required bool bypassDnd,
   }) {
     final channelId = bypassDnd
-        ? '${sound.channelId}_bypass_silent'
-        : sound.channelId;
+        ? '${_nativeAdhanNotificationChannelId}_bypass_silent'
+        : _nativeAdhanNotificationChannelId;
     final channelName = bypassDnd
-        ? '${sound.channelName} - يتجاوز الصامت'
-        : sound.channelName;
+        ? 'تنبيه الأذان - يتجاوز الصامت'
+        : 'تنبيه الأذان';
 
     return AndroidNotificationDetails(
       channelId,
@@ -1087,10 +1108,8 @@ class PrayerNotificationService {
       usesChronometer: true,
       chronometerCountDown: false,
       timeoutAfter: _adhanElapsedVisibility.inMilliseconds,
-      playSound: !sound.isCustomFile,
-      sound: !sound.isCustomFile && sound.rawResourceName != null
-          ? RawResourceAndroidNotificationSound(sound.rawResourceName!)
-          : null,
+      playSound: false,
+      sound: null,
     );
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:quran/quran.dart' as quran;
@@ -736,9 +738,14 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
 }
 
 class KhatmaPageScreen extends StatefulWidget {
-  const KhatmaPageScreen({super.key, required this.page});
+  const KhatmaPageScreen({
+    super.key,
+    required this.page,
+    this.returnToKhatmaHomeOnBack = false,
+  });
 
   final int page;
+  final bool returnToKhatmaHomeOnBack;
 
   @override
   State<KhatmaPageScreen> createState() => _KhatmaPageScreenState();
@@ -772,13 +779,30 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
         ? widget.page + 1
         : null;
     if (nextPage == null) {
+      await _goBack();
+      return;
+    }
+
+    await Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => KhatmaPageScreen(
+          page: nextPage,
+          returnToKhatmaHomeOnBack: widget.returnToKhatmaHomeOnBack,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _goBack() async {
+    if (!widget.returnToKhatmaHomeOnBack) {
       Navigator.pop(context);
       return;
     }
 
     await Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => KhatmaPageScreen(page: nextPage)),
+      MaterialPageRoute(builder: (context) => const KhatmaScreen()),
     );
   }
 
@@ -798,7 +822,13 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
+      child: PopScope<Object?>(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          unawaited(_goBack());
+        },
+        child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(title: Text('الصفحة ${widget.page}')),
         body: _isLoading
@@ -843,6 +873,7 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }
