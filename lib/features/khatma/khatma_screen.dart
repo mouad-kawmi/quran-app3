@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:quran/quran.dart' as quran;
 import 'package:quran_app/core/khatma_service.dart';
 import 'package:quran_app/core/theme.dart';
+import 'package:quran_app/features/quran/qcf_mushaf_page.dart';
 
 class KhatmaScreen extends StatefulWidget {
   const KhatmaScreen({super.key});
@@ -21,17 +21,17 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
   @override
   void initState() {
     super.initState();
-    _loadProgress();
+    _loadProgress(isInit: true);
   }
 
-  Future<void> _loadProgress() async {
+  Future<void> _loadProgress({bool isInit = false}) async {
     final progress = await KhatmaService.loadProgress();
     if (!mounted) return;
 
     setState(() {
       _progress = progress;
       _isLoading = false;
-      if (progress.hasPlan) {
+      if (isInit && progress.hasPlan) {
         _selectedDay = progress.currentDay;
       }
     });
@@ -759,6 +759,7 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
   void initState() {
     super.initState();
     _loadStatus();
+    QcfMushafAssets.warmUpPageWindow(widget.page, radius: 2);
   }
 
   Future<void> _loadStatus() async {
@@ -772,8 +773,28 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
   }
 
   Future<void> _completeAndGoNext() async {
-    await KhatmaService.togglePage(widget.page, completed: true);
+    final progress = await KhatmaService.togglePage(widget.page, completed: true);
     if (!mounted) return;
+
+    if (progress.hasPlan) {
+      final currentDay = KhatmaService.dayForPage(widget.page, progress.planDays!);
+      if (widget.page == currentDay.endPage) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'تقبل الله! أنهيت وِرد اليوم ${currentDay.number} بنجاح.',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: AppTheme.primaryColor,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        await _goBack();
+        return;
+      }
+    }
 
     final nextPage = widget.page < quran.totalPagesCount
         ? widget.page + 1
@@ -833,16 +854,12 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
         appBar: AppBar(title: Text('الصفحة ${widget.page}')),
         body: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildPageInfo(),
-                    const SizedBox(height: 14),
-                    _buildPageText(),
-                    const SizedBox(height: 90),
-                  ],
+            : Padding(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+                child: QcfMushafPage(
+                  pageNumber: widget.page,
+                  juzNumber: _juzForPage(widget.page),
+                  pageSummary: _pageSummary(widget.page),
                 ),
               ),
         bottomNavigationBar: SafeArea(
@@ -878,136 +895,12 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
     );
   }
 
-  Widget _buildPageInfo() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppTheme.elevatedSurfaceColor(context),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '${widget.page}',
-              style: const TextStyle(
-                color: AppTheme.primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              _pageSummary(widget.page),
-              style: TextStyle(
-                color: AppTheme.primaryTextColor(context),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Icon(
-            _isCompleted
-                ? Icons.check_circle_rounded
-                : Icons.radio_button_unchecked_rounded,
-            color: _isCompleted ? AppTheme.primaryColor : Colors.grey,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPageText() {
-    final spans = <InlineSpan>[];
-    final pageData = quran.getPageData(widget.page);
-
-    for (final section in pageData) {
-      final surah = section['surah'] as int;
-      final start = section['start'] as int;
-      final end = section['end'] as int;
-
-      if (start == 1) {
-        spans.add(
-          WidgetSpan(
-            child: _SurahHeader(name: quran.getSurahNameArabic(surah)),
-          ),
-        );
-      }
-
-      for (var verse = start; verse <= end; verse++) {
-        spans.add(
-          TextSpan(
-            text: quran.getVerse(surah, verse),
-            style: GoogleFonts.amiri(
-              color: AppTheme.primaryTextColor(context),
-              fontSize: 24,
-              height: 2.2,
-            ),
-          ),
-        );
-        spans.add(
-          TextSpan(
-            text: ' ${quran.getVerseEndSymbol(verse)} ',
-            style: GoogleFonts.amiri(
-              fontSize: 20,
-              color: AppTheme.secondaryColor,
-              height: 2.2,
-            ),
-          ),
-        );
-      }
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        color: AppTheme.elevatedSurfaceColor(context),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: RichText(
-        textAlign: TextAlign.justify,
-        text: TextSpan(
-          style: TextStyle(color: AppTheme.primaryTextColor(context)),
-          children: spans,
-        ),
-      ),
-    );
-  }
 }
 
-class _SurahHeader extends StatelessWidget {
-  const _SurahHeader({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        name,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: AppTheme.primaryColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
-      ),
-    );
-  }
+int _juzForPage(int page) {
+  final pageData = quran.getPageData(page);
+  final first = pageData.first as Map;
+  return quran.getJuzNumber(first['surah'] as int, first['start'] as int);
 }
 
 String _pageSummary(int page) {

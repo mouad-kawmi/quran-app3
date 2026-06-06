@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:quran/quran.dart' as quran;
+import 'package:quran_app/core/quran_database.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class QuranBookmark {
@@ -36,11 +36,7 @@ class QuranBookmark {
         ? null
         : DateTime.tryParse(createdAtValue);
 
-    if (surah == null ||
-        ayah == null ||
-        page == null ||
-        createdAt == null ||
-        !_isValidPosition(surah, ayah)) {
+    if (surah == null || ayah == null || page == null || createdAt == null) {
       return null;
     }
 
@@ -52,66 +48,43 @@ class QuranBookmark {
     );
   }
 
-  static bool _isValidPosition(int surah, int ayah) {
-    return surah >= 1 &&
-        surah <= quran.totalSurahCount &&
-        ayah >= 1 &&
-        ayah <= quran.getVerseCount(surah);
+  static QuranBookmark fromRecord(QuranBookmarkRecord record) {
+    final ayah = record.ayah;
+    return QuranBookmark(
+      surah: ayah.surah,
+      ayah: ayah.ayah,
+      page: ayah.page,
+      createdAt: record.createdAt,
+    );
   }
 }
 
 class QuranBookmarkService {
   static const _bookmarksKey = 'quran_bookmarks';
+  static const _bookmarksMigratedKey = 'quran_bookmarks_sqlite_migrated';
 
   static Future<List<QuranBookmark>> loadBookmarks() async {
-    final prefs = await SharedPreferences.getInstance();
-    final encodedBookmarks = prefs.getStringList(_bookmarksKey) ?? const [];
-
-    final bookmarks =
-        encodedBookmarks
-            .map(_decodeBookmark)
-            .whereType<QuranBookmark>()
-            .toList()
-          ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    return bookmarks;
+    await _migrateLegacyBookmarks();
+    final bookmarks = await QuranRepository.instance.loadBookmarks();
+    return bookmarks.map(QuranBookmark.fromRecord).toList(growable: false);
   }
 
   static Future<bool> isBookmarked(int surah, int ayah) async {
-    final key = '$surah:$ayah';
-    final bookmarks = await loadBookmarks();
-    return bookmarks.any((bookmark) => bookmark.key == key);
+    await _migrateLegacyBookmarks();
+    return QuranRepository.instance.isBookmarked(surah: surah, ayah: ayah);
   }
 
   static Future<void> addBookmark({
     required int surah,
     required int ayah,
   }) async {
-    final bookmarks = await loadBookmarks();
-    final key = '$surah:$ayah';
-    final filtered = bookmarks
-        .where((bookmark) => bookmark.key != key)
-        .toList(growable: true);
-
-    filtered.insert(
-      0,
-      QuranBookmark(
-        surah: surah,
-        ayah: ayah,
-        page: quran.getPageNumber(surah, ayah),
-        createdAt: DateTime.now(),
-      ),
-    );
-
-    await _saveBookmarks(filtered);
+    await _migrateLegacyBookmarks();
+    await QuranRepository.instance.addBookmark(surah: surah, ayah: ayah);
   }
 
   static Future<void> removeBookmark(int surah, int ayah) async {
-    final key = '$surah:$ayah';
-    final bookmarks = await loadBookmarks();
-    await _saveBookmarks(
-      bookmarks.where((bookmark) => bookmark.key != key).toList(),
-    );
+    await _migrateLegacyBookmarks();
+    await QuranRepository.instance.removeBookmark(surah: surah, ayah: ayah);
   }
 
   static Future<bool> toggleBookmark({
@@ -128,6 +101,28 @@ class QuranBookmarkService {
     return true;
   }
 
+  static Future<void> _migrateLegacyBookmarks() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (prefs.getBool(_bookmarksMigratedKey) ?? false) {
+      return;
+    }
+
+    final encodedBookmarks = prefs.getStringList(_bookmarksKey) ?? const [];
+    for (final encoded in encodedBookmarks) {
+      final bookmark = _decodeBookmark(encoded);
+      if (bookmark == null) {
+        continue;
+      }
+      await QuranRepository.instance.addBookmark(
+        surah: bookmark.surah,
+        ayah: bookmark.ayah,
+        createdAt: bookmark.createdAt,
+      );
+    }
+
+    await prefs.setBool(_bookmarksMigratedKey, true);
+  }
+
   static QuranBookmark? _decodeBookmark(String encoded) {
     try {
       final decoded = jsonDecode(encoded);
@@ -138,13 +133,5 @@ class QuranBookmarkService {
     } catch (_) {
       return null;
     }
-  }
-
-  static Future<void> _saveBookmarks(List<QuranBookmark> bookmarks) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _bookmarksKey,
-      bookmarks.map((bookmark) => jsonEncode(bookmark.toJson())).toList(),
-    );
   }
 }

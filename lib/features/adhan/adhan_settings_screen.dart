@@ -28,11 +28,23 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
   bool _isRescheduling = false;
   bool _isPickingCustomSound = false;
   bool _setupGuideStarted = false;
+  String? _previewingSoundId;
+  String? _previewBusySoundId;
 
   @override
   void initState() {
     super.initState();
+    PrayerNotificationService.setAdhanPreviewCompletedHandler(
+      _handleAdhanPreviewCompleted,
+    );
     _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    PrayerNotificationService.setAdhanPreviewCompletedHandler(null);
+    unawaited(PrayerNotificationService.stopAdhanPreview());
+    super.dispose();
   }
 
   Future<void> _loadInitialData() async {
@@ -163,6 +175,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
       _settings = AdhanSettings(
         sound: sound,
         enabledPrayers: {...current.enabledPrayers},
+        volume: current.volume,
       );
     });
 
@@ -226,6 +239,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
       _settings = AdhanSettings(
         sound: current.sound,
         enabledPrayers: enabledPrayers,
+        volume: current.volume,
       );
     });
 
@@ -368,6 +382,94 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
     }());
   }
 
+  void _setAdhanVolume(double volume) {
+    final current = _settings;
+    if (current == null) {
+      return;
+    }
+
+    setState(() {
+      _settings = AdhanSettings(
+        sound: current.sound,
+        enabledPrayers: {...current.enabledPrayers},
+        volume: _normalizeAdhanVolume(volume),
+      );
+    });
+  }
+
+  void _saveAdhanVolume(double volume) {
+    final normalized = _normalizeAdhanVolume(volume);
+    _saveInBackground(() => PrayerNotificationService.saveAdhanVolume(normalized));
+
+    final previewingSoundId = _previewingSoundId;
+    if (previewingSoundId == null) {
+      return;
+    }
+
+    final previewingSound = _soundOptions.cast<AdhanSoundOption?>().firstWhere(
+      (sound) => sound?.id == previewingSoundId,
+      orElse: () => null,
+    );
+    if (previewingSound == null) {
+      return;
+    }
+
+    unawaited(() async {
+      try {
+        await PrayerNotificationService.stopAdhanPreview();
+        await PrayerNotificationService.previewAdhanSound(
+          previewingSound,
+          volume: normalized,
+        );
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _previewingSoundId = null);
+      }
+    }());
+  }
+
+  Future<void> _toggleSoundPreview(AdhanSoundOption sound) async {
+    final settings = _settings;
+    if (settings == null || _previewBusySoundId != null) {
+      return;
+    }
+
+    setState(() => _previewBusySoundId = sound.id);
+    try {
+      if (_previewingSoundId == sound.id) {
+        await PrayerNotificationService.stopAdhanPreview();
+        if (!mounted) return;
+        setState(() => _previewingSoundId = null);
+        return;
+      }
+
+      await PrayerNotificationService.stopAdhanPreview();
+      await PrayerNotificationService.previewAdhanSound(
+        sound,
+        volume: settings.volume,
+      );
+      if (!mounted) return;
+      setState(() => _previewingSoundId = sound.id);
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تعذر تشغيل معاينة الأذان.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _previewBusySoundId = null);
+      }
+    }
+  }
+
+  void _handleAdhanPreviewCompleted() {
+    if (!mounted) {
+      return;
+    }
+
+    setState(() => _previewingSoundId = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
@@ -396,6 +498,8 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
         const SizedBox(height: 18),
         _buildSectionTitle('صوت الأذان'),
         _buildUploadSoundButton(),
+        const SizedBox(height: 10),
+        _buildVolumeControl(settings.volume),
         const SizedBox(height: 10),
         ..._soundOptions.map(
           (sound) => _buildSoundOption(sound, settings.sound.id),
@@ -429,7 +533,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.08),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -674,25 +778,120 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
     );
   }
 
+  Widget _buildVolumeControl(double volume) {
+    final percent = (volume * 100).round();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.elevatedSurfaceColor(context),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.volume_up_rounded,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'مستوى صوت الأذان',
+                  style: TextStyle(
+                    color: AppTheme.primaryTextColor(context),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              Text(
+                '$percent%',
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          Slider(
+            value: volume,
+            min: 0.1,
+            max: 1,
+            divisions: 9,
+            activeColor: AppTheme.primaryColor,
+            onChanged: _setAdhanVolume,
+            onChangeEnd: _saveAdhanVolume,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildSoundOption(AdhanSoundOption sound, String selectedSoundId) {
+    final isSelected = selectedSoundId == sound.id;
+    final isPreviewing = _previewingSoundId == sound.id;
+    final isBusy = _previewBusySoundId == sound.id;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: AppTheme.elevatedSurfaceColor(context),
         borderRadius: BorderRadius.circular(18),
       ),
-      child: RadioListTile<String>(
-        value: sound.id,
-        groupValue: selectedSoundId,
-        onChanged: selectedSoundId == sound.id
-            ? null
-            : (value) => _setSound(value!),
-        activeColor: AppTheme.primaryColor,
-        title: Text(
-          sound.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: isSelected ? null : () => _setSound(sound.id),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 12, 8),
+          child: Row(
+            children: [
+              Icon(
+                isSelected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                color: isSelected
+                    ? AppTheme.primaryColor
+                    : AppTheme.mutedTextColor(context),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      sound.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      sound.description,
+                      style: TextStyle(color: AppTheme.mutedTextColor(context)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.filledTonal(
+                tooltip: isPreviewing ? 'إيقاف المعاينة' : 'استماع للأذان',
+                onPressed: isBusy ? null : () => _toggleSoundPreview(sound),
+                icon: isBusy
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        isPreviewing
+                            ? Icons.pause_rounded
+                            : Icons.volume_up_rounded,
+                      ),
+              ),
+            ],
+          ),
         ),
-        subtitle: Text(sound.description),
       ),
     );
   }
@@ -707,7 +906,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
       child: SwitchListTile(
         value: enabled,
         onChanged: (value) => _togglePrayer(prayer, value),
-        activeColor: AppTheme.primaryColor,
+        activeThumbColor: AppTheme.primaryColor,
         secondary: Icon(
           enabled
               ? Icons.notifications_active_rounded
@@ -727,7 +926,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppTheme.secondaryColor.withOpacity(0.12),
+        color: AppTheme.secondaryColor.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
@@ -748,4 +947,11 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
     Prayer.maghrib,
     Prayer.isha,
   ];
+
+  static double _normalizeAdhanVolume(double volume) {
+    if (volume.isNaN || volume.isInfinite) {
+      return PrayerNotificationService.defaultAdhanVolume;
+    }
+    return volume.clamp(0.1, 1).toDouble();
+  }
 }

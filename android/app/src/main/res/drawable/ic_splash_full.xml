@@ -6,98 +6,87 @@
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="288dp"
-    android:height="360dp"
+    android:height="288dp"
     android:viewportWidth="288"
-    android:viewportHeight="360">
+    android:viewportHeight="288">
 
-    <!-- ───── Mosque logo (centered top half) ───── -->
+    <group android:translateY="22">
+        <!-- Outer ivory circle -->
+        <path
+            android:fillColor="#FFFDF4"
+            android:pathData="M144,14 C100.7,14 66,48.7 66,92 C66,135.3 100.7,170 144,170 C187.3,170 222,135.3 222,92 C222,48.7 187.3,14 144,14 Z" />
 
-    <!-- Outer ivory circle -->
-    <path
-        android:fillColor="#FFFDF4"
-        android:pathData="M144,14 C100.7,14 66,48.7 66,92 C66,135.3 100.7,170 144,170 C187.3,170 222,135.3 222,92 C222,48.7 187.3,14 144,14 Z" />
+        <!-- Gold ring border -->
+        <path
+            android:strokeColor="#C9A24D"
+            android:strokeWidth="3.5"
+            android:fillColor="#00000000"
+            android:pathData="M144,22 C105.1,22 74,53.1 74,92 C74,130.9 105.1,162 144,162 C182.9,162 214,130.9 214,92 C214,53.1 182.9,22 144,22 Z" />
 
-    <!-- Gold ring border -->
-    <path
-        android:strokeColor="#C9A24D"
-        android:strokeWidth="3.5"
-        android:fillColor="#00000000"
-        android:pathData="M144,22 C105.1,22 74,53.1 74,92 C74,130.9 105.1,162 144,162 C182.9,162 214,130.9 214,92 C214,53.1 182.9,22 144,22 Z" />
+        <!-- Gold dome -->
+        <path
+            android:fillColor="#C9A24D"
+            android:pathData="M110,102 C113,81 126,70 144,70 C162,70 175,81 178,102 L178,107 L110,107 Z" />
 
-    <!-- Gold dome -->
-    <path
-        android:fillColor="#C9A24D"
-        android:pathData="M110,102 C113,81 126,70 144,70 C162,70 175,81 178,102 L178,107 L110,107 Z" />
+        <!-- Green base -->
+        <path
+            android:fillColor="#004D40"
+            android:pathData="M104,104 L184,104 L184,147 L104,147 Z" />
 
-    <!-- Green base -->
-    <path
-        android:fillColor="#004D40"
-        android:pathData="M104,104 L184,104 L184,147 L104,147 Z" />
+        <!-- Dark green minarets -->
+        <path
+            android:fillColor="#003F34"
+            android:pathData="M90,88 L103,88 L103,150 L90,150 Z M185,88 L198,88 L198,150 L185,150 Z" />
 
-    <!-- Dark green minarets -->
-    <path
-        android:fillColor="#003F34"
-        android:pathData="M90,88 L103,88 L103,150 L90,150 Z M185,88 L198,88 L198,150 L185,150 Z" />
+        <!-- Gold minaret balls -->
+        <path
+            android:fillColor="#C9A24D"
+            android:pathData="M96.5,84 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z M191.5,84 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
 
-    <!-- Gold minaret balls -->
-    <path
-        android:fillColor="#C9A24D"
-        android:pathData="M96.5,84 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z M191.5,84 m-8,0 a8,8 0 1,0 16,0 a8,8 0 1,0 -16,0 Z" />
+        <!-- Ivory door arch -->
+        <path
+            android:fillColor="#FFFDF4"
+            android:pathData="M130,147 L130,127 C130,118 136,111 144,111 C152,111 158,118 158,127 L158,147 Z" />
 
-    <!-- Ivory door arch -->
-    <path
-        android:fillColor="#FFFDF4"
-        android:pathData="M130,147 L130,127 C130,118 136,111 144,111 C152,111 158,118 158,127 L158,147 Z" />
+        <!-- Open book pages -->
+        <path
+            android:fillColor="#FFFDF4"
+            android:pathData="M100,155 C115,147 129,147 144,155 L144,170 C129,163 115,163 100,169 Z M144,155 C159,147 173,147 188,155 L188,169 C173,163 159,163 144,170 Z" />
 
-    <!-- Open book pages -->
-    <path
-        android:fillColor="#FFFDF4"
-        android:pathData="M100,155 C115,147 129,147 144,155 L144,170 C129,163 115,163 100,169 Z M144,155 C159,147 173,147 188,155 L188,169 C173,163 159,163 144,170 Z" />
+        <!-- Gold book lines -->
+        <path
+            android:strokeColor="#C9A24D"
+            android:strokeWidth="2.5"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M110,161 C118,158 126,158.5 133,162 M155,162 C162,158.5 170,158 178,161" />
 
-    <!-- Gold book lines -->
-    <path
-        android:strokeColor="#C9A24D"
-        android:strokeWidth="2.5"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M110,161 C118,158 126,158.5 133,162 M155,162 C162,158.5 170,158 178,161" />
+        <!-- Subtle glow arc under logo -->
+        <path
+            android:strokeColor="#C9A24D"
+            android:strokeWidth="2"
+            android:fillColor="#00000000"
+            android:pathData="M108,178 Q144,188 180,178" />
 
-    <!-- ───── "نور القرآن" text (below the logo) ───── -->
-    <!--
-      Android vector drawables do not support <text> elements natively.
-      We render the Arabic title as a series of path shapes.
-      Since this is complex, we use a simple approach: render a styled
-      text background bar that signals the branding area.
-      The actual "نور القرآن" is approximated via a wide gold underline
-      that visually anchors the logo and signals the app name area below.
-    -->
+        <!-- "نور القرآن" as a gold decorative underline band -->
+        <path
+            android:fillColor="#C9A24D"
+            android:fillAlpha="0.18"
+            android:pathData="M80,200 L208,200 L208,210 Q144,218 80,210 Z" />
 
-    <!-- Subtle glow arc under logo -->
-    <path
-        android:strokeColor="#C9A24D"
-        android:strokeWidth="2"
-        android:fillColor="#00000000"
-        android:pathData="M108,178 Q144,188 180,178" />
-
-    <!-- "نور القرآن" as a gold decorative underline band -->
-    <path
-        android:fillColor="#C9A24D"
-        android:fillAlpha="0.18"
-        android:pathData="M80,200 L208,200 L208,210 Q144,218 80,210 Z" />
-
-    <!-- ───── Spinner ring (static arc — no animation in XML) ───── -->
-    <path
-        android:strokeColor="#C9A24D"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M144,230 m-18,0 a18,18 0 0,1 27,-15.6" />
-    <path
-        android:strokeColor="#C9A24D"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:strokeAlpha="0.3"
-        android:pathData="M144,230 m-18,0 a18,18 0 1,0 18,-18" />
-
+        <!-- Spinner ring (static arc — no animation in XML) -->
+        <path
+            android:strokeColor="#C9A24D"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:pathData="M144,230 m-18,0 a18,18 0 0,1 27,-15.6" />
+        <path
+            android:strokeColor="#C9A24D"
+            android:strokeWidth="3"
+            android:strokeLineCap="round"
+            android:fillColor="#00000000"
+            android:strokeAlpha="0.3"
+            android:pathData="M144,230 m-18,0 a18,18 0 1,0 18,-18" />
+    </group>
 </vector>

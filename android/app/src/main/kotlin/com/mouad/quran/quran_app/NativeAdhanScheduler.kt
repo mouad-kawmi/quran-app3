@@ -15,12 +15,15 @@ object NativeAdhanScheduler {
     const val EXTRA_RAW_RESOURCE_NAME = "extra_raw_resource_name"
     const val EXTRA_FILE_PATH = "extra_file_path"
     const val EXTRA_TRIGGER_AT = "extra_trigger_at"
+    const val EXTRA_VOLUME = "extra_volume"
     private const val PREFS_NAME = "native_adhan_alarms"
     private const val IDS_KEY = "alarm_ids"
     private const val PRAYER_PREFIX = "prayer_"
     private const val RAW_PREFIX = "raw_"
     private const val FILE_PREFIX = "file_"
     private const val TRIGGER_PREFIX = "trigger_"
+    private const val VOLUME_PREFIX = "volume_"
+    private const val DEFAULT_VOLUME = 0.85
 
     fun schedule(
         context: Context,
@@ -29,10 +32,11 @@ object NativeAdhanScheduler {
         prayerName: String,
         rawResourceName: String,
         filePath: String,
+        volume: Double,
     ) {
         if (triggerAtMillis <= System.currentTimeMillis()) return
-        saveAlarm(context, id, triggerAtMillis, prayerName, rawResourceName, filePath)
-        scheduleAlarm(context, id, triggerAtMillis, prayerName, rawResourceName, filePath)
+        saveAlarm(context, id, triggerAtMillis, prayerName, rawResourceName, filePath, volume)
+        scheduleAlarm(context, id, triggerAtMillis, prayerName, rawResourceName, filePath, volume)
     }
 
     fun cancel(context: Context, id: Int) {
@@ -52,6 +56,7 @@ object NativeAdhanScheduler {
             val rawResourceName = prefs.getString("$RAW_PREFIX$id", null)
             val filePath = prefs.getString("$FILE_PREFIX$id", null)
             val prayerName = prefs.getString("$PRAYER_PREFIX$id", "").orEmpty()
+            val volume = prefs.getFloat("$VOLUME_PREFIX$id", DEFAULT_VOLUME.toFloat()).toDouble()
 
             if (triggerAtMillis <= now ||
                 (rawResourceName.isNullOrBlank() && filePath.isNullOrBlank())
@@ -67,6 +72,7 @@ object NativeAdhanScheduler {
                 prayerName,
                 rawResourceName.orEmpty(),
                 filePath.orEmpty(),
+                volume,
             )
         }
     }
@@ -78,6 +84,7 @@ object NativeAdhanScheduler {
         prayerName: String,
         rawResourceName: String,
         filePath: String,
+        volume: Double,
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent = pendingIntent(
@@ -87,6 +94,7 @@ object NativeAdhanScheduler {
             rawResourceName = rawResourceName,
             filePath = filePath,
             triggerAtMillis = triggerAtMillis,
+            volume = volume,
         )
 
         try {
@@ -119,6 +127,7 @@ object NativeAdhanScheduler {
         prayerName: String,
         rawResourceName: String,
         filePath: String,
+        volume: Double,
     ) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val ids = prefs.getStringSet(IDS_KEY, emptySet()).orEmpty().toMutableSet()
@@ -130,6 +139,7 @@ object NativeAdhanScheduler {
             .putString("$RAW_PREFIX$id", rawResourceName)
             .putString("$FILE_PREFIX$id", filePath)
             .putLong("$TRIGGER_PREFIX$id", triggerAtMillis)
+            .putFloat("$VOLUME_PREFIX$id", volume.coerceIn(0.1, 1.0).toFloat())
             .apply()
     }
 
@@ -144,6 +154,7 @@ object NativeAdhanScheduler {
             .remove("$RAW_PREFIX$id")
             .remove("$FILE_PREFIX$id")
             .remove("$TRIGGER_PREFIX$id")
+            .remove("$VOLUME_PREFIX$id")
             .apply()
     }
 
@@ -154,6 +165,7 @@ object NativeAdhanScheduler {
         rawResourceName: String = "",
         filePath: String = "",
         triggerAtMillis: Long = 0L,
+        volume: Double = DEFAULT_VOLUME,
     ): PendingIntent {
         val intent = Intent(context, AdhanAlarmReceiver::class.java).apply {
             action = ACTION_PLAY_ADHAN
@@ -162,6 +174,7 @@ object NativeAdhanScheduler {
             putExtra(EXTRA_RAW_RESOURCE_NAME, rawResourceName)
             putExtra(EXTRA_FILE_PATH, filePath)
             putExtra(EXTRA_TRIGGER_AT, triggerAtMillis)
+            putExtra(EXTRA_VOLUME, volume.coerceIn(0.1, 1.0))
         }
 
         return PendingIntent.getBroadcast(

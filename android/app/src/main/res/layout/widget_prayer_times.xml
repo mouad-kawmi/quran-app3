@@ -7,8 +7,12 @@
     android:baselineAligned="false"
     android:layoutDirection="rtl"
     android:orientation="vertical"
-    android:padding="14dp">
+    android:paddingLeft="18dp"
+    android:paddingTop="16dp"
+    android:paddingRight="18dp"
+    android:paddingBottom="14dp">
 
+    <!-- ── Top row: city + hijri date ── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -19,7 +23,6 @@
             android:id="@+id/widget_city"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
             android:layout_weight="1"
             android:ellipsize="end"
             android:gravity="start"
@@ -35,11 +38,21 @@
             android:layout_height="wrap_content"
             android:gravity="end"
             android:maxLines="1"
-            android:text="1447 ذو الحجة"
+            android:text="15 ذو الحجة 1447"
             android:textColor="#C2A24A"
             android:textSize="14sp" />
+
     </LinearLayout>
 
+    <!-- ── Thin gold divider ── -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="12dp"
+        android:background="#1F006B55" />
+
+    <!-- ── Next prayer section ── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -53,74 +66,87 @@
         android:paddingRight="12dp"
         android:paddingBottom="10dp">
 
-        <TextView
-            android:id="@+id/widget_next_name"
+        <!-- Prayer name (right / start in RTL) -->
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:ellipsize="end"
-            android:gravity="start"
-            android:maxLines="1"
-            android:text="مواقيت الصلاة"
-            android:textColor="#006B55"
-            android:textSize="30sp"
-            android:textStyle="bold" />
+            android:orientation="vertical">
 
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="الصلاة القادمة"
+                android:textColor="#6F7672"
+                android:textSize="11sp" />
+
+            <TextView
+                android:id="@+id/widget_next_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="مواقيت الصلاة"
+                android:textColor="#006B55"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <!-- Countdown badge (left / end in RTL) -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_countdown_badge"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingLeft="10dp"
-            android:paddingTop="6dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="6dp">
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingLeft="14dp"
+            android:paddingTop="8dp"
+            android:paddingRight="14dp"
+            android:paddingBottom="8dp">
 
             <TextView
                 android:id="@+id/widget_countdown_prefix"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="بعد"
+                android:text="متبقي"
                 android:textColor="#6F7672"
-                android:textSize="16sp" />
+                android:textSize="10sp" />
 
             <Chronometer
                 android:id="@+id/widget_countdown"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
                 android:format="%s"
-                android:text="--:--:--"
-                android:textColor="#1B1C20"
-                android:textSize="20sp"
+                android:text="--:--"
+                android:textColor="#C2A24A"
+                android:textSize="18sp"
                 android:textStyle="bold" />
+
         </LinearLayout>
+
     </LinearLayout>
 
+    <!-- ── Progress bar ── -->
     <ProgressBar
         android:id="@+id/widget_progress"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="6dp"
+        android:layout_height="5dp"
         android:layout_marginTop="10dp"
+        android:layout_marginBottom="12dp"
         android:max="1000"
         android:progress="0"
         android:progressDrawable="@drawable/widget_progress_horizontal" />
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="14dp"
-        android:background="#1F006B55" />
-
+    <!-- ── Five prayers strip ── -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
         android:baselineAligned="false"
         android:orientation="horizontal">
 
+        <!-- Fajr -->
         <LinearLayout
             android:id="@+id/widget_prayer_0_container"
             android:layout_width="0dp"
@@ -128,10 +154,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingLeft="4dp"
-            android:paddingTop="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="4dp">
+            android:paddingLeft="3dp"
+            android:paddingTop="6dp"
+            android:paddingRight="3dp"
+            android:paddingBottom="6dp">
 
             <TextView
                 android:id="@+id/widget_prayer_0_name"
@@ -139,7 +165,7 @@
                 android:layout_height="wrap_content"
                 android:text="الفجر"
                 android:textColor="#6F7672"
-                android:textSize="14sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/widget_prayer_0_time"
@@ -147,10 +173,12 @@
                 android:layout_height="wrap_content"
                 android:text="--:--"
                 android:textColor="#1B1C20"
-                android:textSize="17sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
+
         </LinearLayout>
 
+        <!-- Dhuhr -->
         <LinearLayout
             android:id="@+id/widget_prayer_1_container"
             android:layout_width="0dp"
@@ -158,10 +186,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingLeft="4dp"
-            android:paddingTop="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="4dp">
+            android:paddingLeft="3dp"
+            android:paddingTop="6dp"
+            android:paddingRight="3dp"
+            android:paddingBottom="6dp">
 
             <TextView
                 android:id="@+id/widget_prayer_1_name"
@@ -169,7 +197,7 @@
                 android:layout_height="wrap_content"
                 android:text="الظهر"
                 android:textColor="#6F7672"
-                android:textSize="14sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/widget_prayer_1_time"
@@ -177,10 +205,12 @@
                 android:layout_height="wrap_content"
                 android:text="--:--"
                 android:textColor="#1B1C20"
-                android:textSize="17sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
+
         </LinearLayout>
 
+        <!-- Asr -->
         <LinearLayout
             android:id="@+id/widget_prayer_2_container"
             android:layout_width="0dp"
@@ -188,10 +218,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingLeft="4dp"
-            android:paddingTop="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="4dp">
+            android:paddingLeft="3dp"
+            android:paddingTop="6dp"
+            android:paddingRight="3dp"
+            android:paddingBottom="6dp">
 
             <TextView
                 android:id="@+id/widget_prayer_2_name"
@@ -199,7 +229,7 @@
                 android:layout_height="wrap_content"
                 android:text="العصر"
                 android:textColor="#6F7672"
-                android:textSize="14sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/widget_prayer_2_time"
@@ -207,10 +237,12 @@
                 android:layout_height="wrap_content"
                 android:text="--:--"
                 android:textColor="#1B1C20"
-                android:textSize="17sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
+
         </LinearLayout>
 
+        <!-- Maghrib -->
         <LinearLayout
             android:id="@+id/widget_prayer_3_container"
             android:layout_width="0dp"
@@ -218,10 +250,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingLeft="4dp"
-            android:paddingTop="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="4dp">
+            android:paddingLeft="3dp"
+            android:paddingTop="6dp"
+            android:paddingRight="3dp"
+            android:paddingBottom="6dp">
 
             <TextView
                 android:id="@+id/widget_prayer_3_name"
@@ -229,7 +261,7 @@
                 android:layout_height="wrap_content"
                 android:text="المغرب"
                 android:textColor="#6F7672"
-                android:textSize="14sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/widget_prayer_3_time"
@@ -237,10 +269,12 @@
                 android:layout_height="wrap_content"
                 android:text="--:--"
                 android:textColor="#1B1C20"
-                android:textSize="17sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
+
         </LinearLayout>
 
+        <!-- Isha -->
         <LinearLayout
             android:id="@+id/widget_prayer_4_container"
             android:layout_width="0dp"
@@ -248,10 +282,10 @@
             android:layout_weight="1"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingLeft="4dp"
-            android:paddingTop="4dp"
-            android:paddingRight="4dp"
-            android:paddingBottom="4dp">
+            android:paddingLeft="3dp"
+            android:paddingTop="6dp"
+            android:paddingRight="3dp"
+            android:paddingBottom="6dp">
 
             <TextView
                 android:id="@+id/widget_prayer_4_name"
@@ -259,7 +293,7 @@
                 android:layout_height="wrap_content"
                 android:text="العشاء"
                 android:textColor="#6F7672"
-                android:textSize="14sp" />
+                android:textSize="11sp" />
 
             <TextView
                 android:id="@+id/widget_prayer_4_time"
@@ -267,8 +301,11 @@
                 android:layout_height="wrap_content"
                 android:text="--:--"
                 android:textColor="#1B1C20"
-                android:textSize="17sp"
+                android:textSize="13sp"
                 android:textStyle="bold" />
+
         </LinearLayout>
+
     </LinearLayout>
+
 </LinearLayout>

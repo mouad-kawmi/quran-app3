@@ -87,12 +87,7 @@ class SurahListScreen extends StatelessWidget {
   Widget _buildSurahCard(BuildContext context, int surahNumber) {
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => QuranReaderScreen(surahNumber: surahNumber),
-          ),
-        );
+        openQuranReader(context, surahNumber: surahNumber);
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(

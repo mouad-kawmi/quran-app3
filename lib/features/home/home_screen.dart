@@ -300,14 +300,15 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    unawaited(
-      _pushAndRefreshReading(
-        QuranReaderScreen(
-          surahNumber: lastRead.surah,
-          initialAyah: lastRead.ayah,
-        ),
-      ),
-    );
+    unawaited(() async {
+      await openQuranReader(
+        context,
+        surahNumber: lastRead.surah,
+        initialAyah: lastRead.ayah,
+      );
+      if (!mounted) return;
+      await _loadReadingProgress();
+    }());
   }
 
   void _tickPrayerCountdown() {
@@ -1030,6 +1031,115 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildPremiumProgressArc(
+    String time,
+    String label, {
+    required bool isLoading,
+    required double progress,
+  }) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Outer glow ring
+        Container(
+          width: 116,
+          height: 116,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.secondaryColor.withOpacity(0.18),
+                blurRadius: 18,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          width: 108,
+          height: 108,
+          child: CircularProgressIndicator(
+            value: isLoading ? null : progress,
+            strokeWidth: 7,
+            backgroundColor: Colors.white.withOpacity(0.12),
+            valueColor: const AlwaysStoppedAnimation<Color>(
+              AppTheme.secondaryColor,
+            ),
+            strokeCap: StrokeCap.round,
+          ),
+        ),
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              time,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                fontSize: 14,
+                letterSpacing: 0.5,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 9,
+                color: Colors.white.withOpacity(0.55),
+                letterSpacing: 0.3,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Premium location badge displayed inside the green card
+  Widget _buildLocationBadgePremium() {
+    final location = _prayerLocation;
+    return InkWell(
+      onTap: _isLoadingPrayerTimes ? null : _loadPrayerTimes,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.18)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              location?.isFallback == true || _locationError != null
+                  ? Icons.location_off_rounded
+                  : Icons.location_on_rounded,
+              color: AppTheme.secondaryColor,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                _isLoadingPrayerTimes
+                    ? 'تحديد الموقع'
+                    : location?.name ?? 'الموقع',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

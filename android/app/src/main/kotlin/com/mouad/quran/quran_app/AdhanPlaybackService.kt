@@ -15,6 +15,7 @@ import android.media.MediaPlayer
 import android.os.Build
 import android.os.IBinder
 import java.io.File
+import kotlin.math.roundToInt
 
 class AdhanPlaybackService : Service() {
     private var mediaPlayer: MediaPlayer? = null
@@ -36,6 +37,10 @@ class AdhanPlaybackService : Service() {
         val prayerName = intent?.getStringExtra(NativeAdhanScheduler.EXTRA_PRAYER_NAME).orEmpty()
         val rawResourceName = intent?.getStringExtra(NativeAdhanScheduler.EXTRA_RAW_RESOURCE_NAME)
         val filePath = intent?.getStringExtra(NativeAdhanScheduler.EXTRA_FILE_PATH)
+        val volume = intent?.getDoubleExtra(
+            NativeAdhanScheduler.EXTRA_VOLUME,
+            DEFAULT_ADHAN_VOLUME,
+        ) ?: DEFAULT_ADHAN_VOLUME
         if (rawResourceName.isNullOrBlank() && filePath.isNullOrBlank()) {
             stopSelf(startId)
             return START_NOT_STICKY
@@ -48,7 +53,7 @@ class AdhanPlaybackService : Service() {
 
         startForegroundCompat(buildNotification(prayerName, triggerAtMillis))
         keepElapsedNotification = false
-        playAdhan(rawResourceName.orEmpty(), filePath.orEmpty(), startId)
+        playAdhan(rawResourceName.orEmpty(), filePath.orEmpty(), startId, volume)
         return START_NOT_STICKY
     }
 
@@ -60,10 +65,15 @@ class AdhanPlaybackService : Service() {
         super.onDestroy()
     }
 
-    private fun playAdhan(rawResourceName: String, filePath: String, startId: Int) {
+    private fun playAdhan(
+        rawResourceName: String,
+        filePath: String,
+        startId: Int,
+        volume: Double,
+    ) {
         releasePlayer()
         requestAudioFocus()
-        ensureAudibleAlarmVolume()
+        applyAlarmVolume(volume)
 
         try {
             mediaPlayer = MediaPlayer().apply {
@@ -145,16 +155,21 @@ class AdhanPlaybackService : Service() {
         focusRequest = null
     }
 
-    private fun ensureAudibleAlarmVolume() {
+    private fun applyAlarmVolume(volume: Double) {
         val manager = audioManager ?: return
         val currentVolume = manager.getStreamVolume(AudioManager.STREAM_ALARM)
         val maxVolume = manager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-        if (currentVolume > 0 || maxVolume <= 0) return
+        if (maxVolume <= 0) return
 
-        previousAlarmVolume = currentVolume
+        val targetVolume = (maxVolume * volume.coerceIn(0.1, 1.0))
+            .roundToInt()
+            .coerceIn(1, maxVolume)
+        if (currentVolume == targetVolume) return
+
+        previousAlarmVolume = previousAlarmVolume ?: currentVolume
         manager.setStreamVolume(
             AudioManager.STREAM_ALARM,
-            (maxVolume / 2).coerceAtLeast(1),
+            targetVolume,
             0,
         )
     }
@@ -205,7 +220,6 @@ class AdhanPlaybackService : Service() {
 
         builder
             .setSmallIcon(R.drawable.ic_notification_icon)
-            .setContentTitle("الأذان يعمل")
             .setContentTitle("الأذان")
             .setContentText(text)
             .setWhen(triggerAtMillis)
@@ -292,5 +306,6 @@ class AdhanPlaybackService : Service() {
         private const val PLAYBACK_NOTIFICATION_ID = 990011
         private const val STOP_REQUEST_CODE = 990012
         private const val ADHAN_NOTIFICATION_VISIBILITY_MS = 30L * 60L * 1000L
+        private const val DEFAULT_ADHAN_VOLUME = 0.85
     }
 }

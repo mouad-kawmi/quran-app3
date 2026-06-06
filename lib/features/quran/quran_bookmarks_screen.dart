@@ -37,15 +37,11 @@ class _QuranBookmarksScreenState extends State<QuranBookmarksScreen> {
   }
 
   void _openBookmark(QuranBookmark bookmark) {
-    Navigator.push(
+    openQuranReader(
       context,
-      MaterialPageRoute(
-        builder: (context) => QuranReaderScreen(
-          surahNumber: bookmark.surah,
-          initialAyah: bookmark.ayah,
-          initialPage: bookmark.page,
-        ),
-      ),
+      surahNumber: bookmark.surah,
+      initialAyah: bookmark.ayah,
+      initialPage: bookmark.page,
     ).then((_) => _loadBookmarks());
   }
 

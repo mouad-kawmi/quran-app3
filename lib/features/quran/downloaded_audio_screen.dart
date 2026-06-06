@@ -104,12 +104,7 @@ class _DownloadedAudioScreenState extends State<DownloadedAudioScreen> {
   }
 
   void _openReader(int surah) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuranReaderScreen(surahNumber: surah),
-      ),
-    );
+    openQuranReader(context, surahNumber: surah);
   }
 
   @override

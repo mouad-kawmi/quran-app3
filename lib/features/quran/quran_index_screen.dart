@@ -122,15 +122,11 @@ class QuranIndexScreen extends StatelessWidget {
   }) {
     return InkWell(
       onTap: () {
-        Navigator.push(
+        openQuranReader(
           context,
-          MaterialPageRoute(
-            builder: (context) => QuranReaderScreen(
-              surahNumber: surah,
-              initialAyah: ayah,
-              initialPage: page,
-            ),
-          ),
+          surahNumber: surah,
+          initialAyah: ayah,
+          initialPage: page,
         );
       },
       borderRadius: BorderRadius.circular(16),

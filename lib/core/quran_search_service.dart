@@ -1,4 +1,5 @@
-import 'package:quran/quran.dart' as quran;
+import 'package:quran_app/core/quran_database.dart';
+import 'package:quran_app/core/quran_text_normalizer.dart';
 
 class QuranSearchResult {
   const QuranSearchResult({
@@ -15,46 +16,21 @@ class QuranSearchResult {
 }
 
 class QuranSearchService {
-  static List<QuranSearchResult> search(String query) {
-    final normalizedQuery = normalize(query);
-    if (normalizedQuery.isEmpty) {
-      return const [];
-    }
-
-    final results = <QuranSearchResult>[];
-
-    for (var surah = 1; surah <= quran.totalSurahCount; surah++) {
-      for (var ayah = 1; ayah <= quran.getVerseCount(surah); ayah++) {
-        final verse = quran.getVerse(surah, ayah);
-        if (normalize(verse).contains(normalizedQuery)) {
-          results.add(
-            QuranSearchResult(
-              surah: surah,
-              ayah: ayah,
-              page: quran.getPageNumber(surah, ayah),
-              verse: verse,
-            ),
-          );
-        }
-      }
-    }
-
-    return results;
+  static Future<List<QuranSearchResult>> search(String query) async {
+    final ayahs = await QuranRepository.instance.searchAyahs(query);
+    return ayahs
+        .map(
+          (ayah) => QuranSearchResult(
+            surah: ayah.surah,
+            ayah: ayah.ayah,
+            page: ayah.page,
+            verse: ayah.text,
+          ),
+        )
+        .toList(growable: false);
   }
 
   static String normalize(String value) {
-    return value
-        .replaceAll(
-          RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'),
-          '',
-        )
-        .replaceAll('\u0640', '')
-        .replaceAll(RegExp('[إأآٱ]'), 'ا')
-        .replaceAll('ى', 'ي')
-        .replaceAll('ئ', 'ي')
-        .replaceAll('ؤ', 'و')
-        .replaceAll('ة', 'ه')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+    return QuranTextNormalizer.normalize(value);
   }
 }

@@ -19,6 +19,8 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
   Timer? _debounce;
   List<QuranSearchResult> _results = const [];
   String _query = '';
+  bool _isSearching = false;
+  int _searchSerial = 0;
 
   @override
   void initState() {
@@ -38,25 +40,55 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 250), () {
       final query = _searchController.text.trim();
-      final results = QuranSearchService.search(query);
-      if (!mounted) return;
+      unawaited(_runSearch(query));
+    });
+  }
 
+  Future<void> _runSearch(String query) async {
+    final serial = ++_searchSerial;
+    if (query.isEmpty) {
+      if (!mounted) return;
       setState(() {
         _query = query;
-        _results = results;
+        _results = const [];
+        _isSearching = false;
       });
+      return;
+    }
+
+    setState(() {
+      _query = query;
+      _results = const [];
+      _isSearching = true;
+    });
+
+    List<QuranSearchResult> results;
+    try {
+      results = await QuranSearchService.search(query);
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'quran_app',
+          context: ErrorDescription('searching Quran SQLite database'),
+        ),
+      );
+      results = const [];
+    }
+
+    if (!mounted || serial != _searchSerial) return;
+    setState(() {
+      _results = results;
+      _isSearching = false;
     });
   }
 
   void _openResult(QuranSearchResult result) {
-    Navigator.push(
+    openQuranReader(
       context,
-      MaterialPageRoute(
-        builder: (context) => QuranReaderScreen(
-          surahNumber: result.surah,
-          initialAyah: result.ayah,
-        ),
-      ),
+      surahNumber: result.surah,
+      initialAyah: result.ayah,
     );
   }
 
@@ -118,15 +150,19 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
     if (_query.isEmpty) {
       return _buildEmptyState(
         icon: Icons.search_rounded,
-        title: 'قلب على أي كلمة',
+        title: 'ابحث عن أي كلمة',
         subtitle: 'البحث يعمل دون إنترنت ويشمل آيات القرآن كاملة.',
       );
+    }
+
+    if (_isSearching) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_results.isEmpty) {
       return _buildEmptyState(
         icon: Icons.manage_search_rounded,
-        title: 'ما لقاينا حتى آية',
+        title: 'عذراً، لم نجد نتائج',
         subtitle: 'حاول بكلمة أخرى أو اكتبها دون تشكيل.',
       );
     }
@@ -150,7 +186,9 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(AppTheme.isDark(context) ? 0.14 : 0.04),
+              color: Colors.black.withValues(
+                alpha: AppTheme.isDark(context) ? 0.14 : 0.04,
+              ),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -167,7 +205,7 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.primaryColor.withOpacity(0.08),
+                    color: AppTheme.primaryColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(

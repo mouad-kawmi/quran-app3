@@ -17,8 +17,13 @@ import 'package:workmanager/workmanager.dart';
 @pragma('vm:entry-point')
 void prayerNotificationCallbackDispatcher() {
   Workmanager().executeTask((taskName, inputData) async {
-    DartPluginRegistrant.ensureInitialized();
-    return PrayerNotificationService.refreshStoredPrayerReminders();
+    try {
+      DartPluginRegistrant.ensureInitialized();
+      final result = await PrayerNotificationService.refreshStoredPrayerReminders(force: true);
+      return Future.value(result);
+    } catch (_) {
+      return Future.value(false);
+    }
   });
 }
 
@@ -45,10 +50,15 @@ class AdhanSoundOption {
 }
 
 class AdhanSettings {
-  const AdhanSettings({required this.sound, required this.enabledPrayers});
+  const AdhanSettings({
+    required this.sound,
+    required this.enabledPrayers,
+    required this.volume,
+  });
 
   final AdhanSoundOption sound;
   final Set<Prayer> enabledPrayers;
+  final double volume;
 
   bool isEnabledFor(Prayer prayer) => enabledPrayers.contains(prayer);
 }
@@ -88,8 +98,8 @@ class PrayerNotificationService {
       'تنبيهات تظهر قبل وقت الصلاة بخمس دقائق.';
   static const String _adhanChannelDescription =
       'تنبيهات وقت الصلاة مع صوت الأذان المختار.';
-  static const String _notificationIconName = 'ic_notification_icon';
-  static const String _notificationLargeIconName = 'app_brand_icon';
+  static const String _notificationIconName = 'ic_notif_prayer';
+  static const String _notificationLargeIconName = 'nor_quran_2';
   static const Color _notificationColor = Color(0xFF004D40);
   static const Duration _adhanElapsedVisibility = Duration(minutes: 30);
   static const String _latitudeKey = 'prayer_reminder_latitude';
@@ -103,7 +113,10 @@ class PrayerNotificationService {
       'prayer_reminder_scheduled_official';
   static const String _lastScheduleAdhanSoundKey =
       'prayer_reminder_scheduled_adhan_sound';
+  static const String _lastScheduleAdhanVolumeKey =
+      'prayer_reminder_scheduled_adhan_volume';
   static const String _adhanSoundKey = 'adhan_sound_id';
+  static const String _adhanVolumeKey = 'adhan_volume';
   static const String _adhanEnabledPrefix = 'adhan_enabled_';
   static const String _initialAdhanSetupPromptShownKey =
       'initial_adhan_setup_prompt_shown';
@@ -224,6 +237,7 @@ class PrayerNotificationService {
     Prayer.maghrib,
     Prayer.isha,
   ];
+  static const double defaultAdhanVolume = 0.85;
 
   static bool _notificationsInitialized = false;
   static bool _backgroundRefreshInitialized = false;
@@ -232,7 +246,14 @@ class PrayerNotificationService {
   static bool _legacyChannelsDeleted = false;
   static bool _startupRefreshQueued = false;
   static bool _adhanRefreshInProgress = false;
+  static bool _hasQueuedAdhanRefresh = false;
+  static Future<void>? _adhanRefreshTask;
   static Set<Prayer>? _queuedAdhanRefreshPrayers;
+
+  /// Stream of payloads from clicked notifications
+  static final StreamController<String> _onNotificationClick =
+      StreamController<String>.broadcast();
+  static Stream<String> get onNotificationClick => _onNotificationClick.stream;
 
   static Future<void> initialize({
     bool requestPermissions = false,
@@ -246,7 +267,7 @@ class PrayerNotificationService {
     await _initializeBackgroundRefresh();
     if (refreshReminders && !_startupRefreshQueued) {
       _startupRefreshQueued = true;
-      unawaited(refreshStoredPrayerReminders());
+      unawaited(refreshStoredPrayerReminders(force: true));
     }
   }
 
@@ -280,6 +301,9 @@ class PrayerNotificationService {
   static Future<AdhanSettings> loadAdhanSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final soundId = prefs.getString(_adhanSoundKey);
+    final volume = _sanitizeAdhanVolume(
+      prefs.getDouble(_adhanVolumeKey) ?? defaultAdhanVolume,
+    );
     final customSound = await loadCustomAdhanSound();
     final sound = soundId == _customAdhanSoundId && customSound != null
         ? customSound
@@ -293,7 +317,11 @@ class PrayerNotificationService {
       }
     }
 
-    return AdhanSettings(sound: sound, enabledPrayers: enabledPrayers);
+    return AdhanSettings(
+      sound: sound,
+      enabledPrayers: enabledPrayers,
+      volume: volume,
+    );
   }
 
   static Future<void> saveAdhanSound(String soundId) async {
@@ -308,6 +336,49 @@ class PrayerNotificationService {
       await prefs.setString(_adhanSoundKey, adhanSoundById(soundId).id);
     }
     await _rescheduleStoredAdhanAlerts();
+  }
+
+  static Future<void> saveAdhanVolume(double volume) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_adhanVolumeKey, _sanitizeAdhanVolume(volume));
+    await _rescheduleStoredAdhanAlerts();
+  }
+
+  static void setAdhanPreviewCompletedHandler(VoidCallback? handler) {
+    if (handler == null) {
+      _nativeAdhanChannel.setMethodCallHandler(null);
+      return;
+    }
+
+    _nativeAdhanChannel.setMethodCallHandler((call) async {
+      if (call.method == 'adhanPreviewCompleted') {
+        handler();
+      }
+    });
+  }
+
+  static Future<void> previewAdhanSound(
+    AdhanSoundOption sound, {
+    required double volume,
+  }) async {
+    if (!_isAndroid ||
+        (sound.rawResourceName == null && sound.filePath == null)) {
+      return;
+    }
+
+    await _nativeAdhanChannel.invokeMethod<bool>('preview', {
+      'rawResourceName': sound.rawResourceName,
+      'filePath': sound.filePath,
+      'volume': _sanitizeAdhanVolume(volume),
+    });
+  }
+
+  static Future<void> stopAdhanPreview() async {
+    if (!_isAndroid) {
+      return;
+    }
+
+    await _nativeAdhanChannel.invokeMethod<bool>('stopPreview');
   }
 
   static Future<List<AdhanSoundOption>> loadAvailableAdhanSounds() async {
@@ -371,7 +442,7 @@ class PrayerNotificationService {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_adhanEnabledKey(prayer), enabled);
-    _queueAdhanRefresh(prayers: {prayer});
+    await _queueAdhanRefresh(prayers: {prayer});
   }
 
   static Future<NotificationHealthStatus> loadNotificationHealth() async {
@@ -594,44 +665,60 @@ class PrayerNotificationService {
       final moments = HabousPrayerTimesService.momentsFromDisplay(display);
 
       for (final moment in moments) {
+        // ─── الحالة 1 و 2 و 3: notification 5 دقائق ───
+        // تُجدول فقط إذا وقتها لم يمُر بعد
         final reminderTime = moment.time.subtract(reminderOffset);
-        if (!reminderTime.isAfter(now)) {
+        if (reminderTime.isAfter(now)) {
+          await _notifications.zonedSchedule(
+            id: _notificationId(reminderTime, moment.prayer),
+            title: 'تبقت 5 دقائق على الصلاة',
+            body:
+                'تبقت 5 دقائق على صلاة ${PrayerService.getPrayerName(moment.prayer)}',
+            scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
+            notificationDetails: reminderDetails,
+            androidScheduleMode: androidScheduleMode,
+            payload: moment.prayer.name,
+          );
+        }
+
+        // تخطى الصلاة إذا وقتها مر (لا داعي لجدولة notification الصلاة)
+        if (!moment.time.isAfter(now)) {
           continue;
         }
 
+        // ─── الحالة 1: أذان مفعّل → notification صلاة + أذان ───
+        // ─── الحالة 2: أذان مُعطَّل → notification صلاة فقط (بلا أذان) ───
+        // ─── الحالة 3: مُعطَّل ثم مُفعَّل → نفس الحالة 1 ───
+        final isAdhanEnabled = adhanSettings.isEnabledFor(moment.prayer);
+        final adhanId = _adhanNotificationId(moment.time, moment.prayer);
+        final prayerName = PrayerService.getPrayerName(moment.prayer);
+
+        final details = isAdhanEnabled
+            ? await _adhanNotificationDetails(prayerTime: moment.time)
+            : _prayerTimeNotificationDetails(moment.time);
+
+        // notification وقت الصلاة دائماً (سواء الأذان مفعّل أو لا)
         await _notifications.zonedSchedule(
-          id: _notificationId(reminderTime, moment.prayer),
-          title: 'تبقت 5 دقائق على الصلاة',
-          body:
-              'تبقت 5 دقائق على صلاة ${PrayerService.getPrayerName(moment.prayer)}',
-          scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
-          notificationDetails: reminderDetails,
+          id: adhanId,
+          title: 'حان وقت الصلاة',
+          body: 'حان وقت صلاة $prayerName',
+          scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
+          notificationDetails: details,
           androidScheduleMode: androidScheduleMode,
-          payload: moment.prayer.name,
+          payload: 'adhan:${moment.prayer.name}',
         );
 
-        if (adhanSettings.isEnabledFor(moment.prayer)) {
-          final adhanId = _adhanNotificationId(moment.time, moment.prayer);
-          final prayerName = PrayerService.getPrayerName(moment.prayer);
-          final adhanDetails = await _adhanNotificationDetails(
-            adhanSettings.sound,
-            prayerTime: moment.time,
-          );
-          await _notifications.zonedSchedule(
-            id: adhanId,
-            title: 'حان وقت الصلاة',
-            body: 'حان وقت صلاة $prayerName',
-            scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
-            notificationDetails: adhanDetails,
-            androidScheduleMode: androidScheduleMode,
-            payload: 'adhan:${moment.prayer.name}',
-          );
+        // الأذان native فقط إذا مفعّل
+        if (isAdhanEnabled) {
           await _scheduleNativeAdhan(
             id: adhanId,
             time: moment.time,
             prayerName: prayerName,
             sound: adhanSettings.sound,
+            volume: adhanSettings.volume,
           );
+        } else {
+          await _cancelNativeAdhan(adhanId);
         }
       }
     }
@@ -639,12 +726,20 @@ class PrayerNotificationService {
     return scheduleUsedOfficialTimes;
   }
 
-  static void _queueAdhanRefresh({Set<Prayer>? prayers}) {
-    _queuedAdhanRefreshPrayers = _mergePrayerSets(
-      _queuedAdhanRefreshPrayers,
-      prayers,
-    );
-    unawaited(_runQueuedAdhanRefresh());
+  static Future<void> _queueAdhanRefresh({Set<Prayer>? prayers}) {
+    if (!_hasQueuedAdhanRefresh ||
+        _queuedAdhanRefreshPrayers == null ||
+        prayers == null) {
+      _queuedAdhanRefreshPrayers = prayers;
+    } else {
+      _queuedAdhanRefreshPrayers = {
+        ..._queuedAdhanRefreshPrayers!,
+        ...prayers,
+      };
+    }
+    _hasQueuedAdhanRefresh = true;
+    _adhanRefreshTask ??= _runQueuedAdhanRefresh();
+    return _adhanRefreshTask!;
   }
 
   static Future<void> _runQueuedAdhanRefresh() async {
@@ -654,24 +749,16 @@ class PrayerNotificationService {
 
     _adhanRefreshInProgress = true;
     try {
-      while (_queuedAdhanRefreshPrayers != null) {
+      while (_hasQueuedAdhanRefresh) {
         final prayers = _queuedAdhanRefreshPrayers;
         _queuedAdhanRefreshPrayers = null;
+        _hasQueuedAdhanRefresh = false;
         await _rescheduleStoredAdhanAlerts(prayers: prayers);
       }
     } finally {
       _adhanRefreshInProgress = false;
+      _adhanRefreshTask = null;
     }
-  }
-
-  static Set<Prayer>? _mergePrayerSets(
-    Set<Prayer>? current,
-    Set<Prayer>? next,
-  ) {
-    if (current == null || next == null) {
-      return null;
-    }
-    return {...current, ...next};
   }
 
   static Future<void> _rescheduleStoredAdhanAlerts({
@@ -703,37 +790,45 @@ class PrayerNotificationService {
           continue;
         }
 
-        if (!moment.time.isAfter(now) ||
-            !adhanSettings.isEnabledFor(moment.prayer)) {
+        if (!moment.time.isAfter(now)) {
           continue;
         }
 
+        final isAdhanEnabled = adhanSettings.isEnabledFor(moment.prayer);
         final adhanId = _adhanNotificationId(moment.time, moment.prayer);
         final prayerName = PrayerService.getPrayerName(moment.prayer);
-        final adhanDetails = await _adhanNotificationDetails(
-          adhanSettings.sound,
-          prayerTime: moment.time,
-        );
+
+        final details = isAdhanEnabled
+            ? await _adhanNotificationDetails(prayerTime: moment.time)
+            : _prayerTimeNotificationDetails(moment.time);
+
         await _notifications.zonedSchedule(
           id: adhanId,
           title: 'حان وقت الصلاة',
           body: 'حان وقت صلاة $prayerName',
           scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
-          notificationDetails: adhanDetails,
+          notificationDetails: details,
           androidScheduleMode: androidScheduleMode,
           payload: 'adhan:${moment.prayer.name}',
         );
-        await _scheduleNativeAdhan(
-          id: adhanId,
-          time: moment.time,
-          prayerName: prayerName,
-          sound: adhanSettings.sound,
-        );
+
+        if (isAdhanEnabled) {
+          await _scheduleNativeAdhan(
+            id: adhanId,
+            time: moment.time,
+            prayerName: prayerName,
+            sound: adhanSettings.sound,
+            volume: adhanSettings.volume,
+          );
+        } else {
+          await _cancelNativeAdhan(adhanId);
+        }
       }
     }
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_lastScheduleAdhanSoundKey, adhanSettings.sound.id);
+    await prefs.setDouble(_lastScheduleAdhanVolumeKey, adhanSettings.volume);
   }
 
   static Future<void> _initializeNotifications({
@@ -758,12 +853,20 @@ class PrayerNotificationService {
     await _configureLocalTimeZone();
 
     const initializationSettings = InitializationSettings(
-      android: AndroidInitializationSettings('@drawable/ic_notification_icon'),
+      android: AndroidInitializationSettings('@drawable/ic_notif_prayer'),
       iOS: DarwinInitializationSettings(),
       macOS: DarwinInitializationSettings(),
     );
 
-    await _notifications.initialize(settings: initializationSettings);
+    await _notifications.initialize(
+      settings: initializationSettings,
+      onDidReceiveNotificationResponse: (response) {
+        if (response.payload != null) {
+          _onNotificationClick.add(response.payload!);
+        }
+      },
+      onDidReceiveBackgroundNotificationResponse: _notificationTapBackground,
+    );
     await _deleteLegacyAdhanChannels();
     _notificationsInitialized = true;
   }
@@ -819,8 +922,13 @@ class PrayerNotificationService {
       return;
     }
 
-    final timezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(timezone.identifier));
+    try {
+      final timezone = await FlutterTimezone.getLocalTimezone();
+      tz.setLocalLocation(tz.getLocation(timezone.identifier));
+    } catch (_) {
+      // Fallback to UTC if timezone detection fails
+      tz.setLocalLocation(tz.UTC);
+    }
   }
 
   static Future<bool> _hasFreshSchedule(
@@ -831,15 +939,17 @@ class PrayerNotificationService {
     final scheduledDay = prefs.getInt(_lastScheduledDayKey);
     final scheduledLatitude = prefs.getDouble(_lastScheduledLatitudeKey);
     final scheduledLongitude = prefs.getDouble(_lastScheduledLongitudeKey);
-    final scheduledOfficial = prefs.getBool(_lastScheduleOfficialKey) ?? false;
     final scheduledAdhanSound = prefs.getString(_lastScheduleAdhanSoundKey);
-    final currentAdhanSound = (await loadAdhanSettings()).sound.id;
+    final scheduledAdhanVolume = prefs.getDouble(_lastScheduleAdhanVolumeKey);
+    final currentAdhanSettings = await loadAdhanSettings();
+    final currentAdhanSound = currentAdhanSettings.sound.id;
+    final currentAdhanVolume = currentAdhanSettings.volume;
 
     if (scheduledDay == null ||
         scheduledLatitude == null ||
         scheduledLongitude == null ||
-        !scheduledOfficial ||
-        scheduledAdhanSound != currentAdhanSound) {
+        scheduledAdhanSound != currentAdhanSound ||
+        scheduledAdhanVolume != currentAdhanVolume) {
       return false;
     }
 
@@ -863,6 +973,10 @@ class PrayerNotificationService {
     await prefs.setString(
       _lastScheduleAdhanSoundKey,
       (await loadAdhanSettings()).sound.id,
+    );
+    await prefs.setDouble(
+      _lastScheduleAdhanVolumeKey,
+      (await loadAdhanSettings()).volume,
     );
   }
 
@@ -1004,6 +1118,7 @@ class PrayerNotificationService {
     required DateTime time,
     required String prayerName,
     required AdhanSoundOption sound,
+    required double volume,
   }) async {
     if (!_isAndroid ||
         (sound.rawResourceName == null && sound.filePath == null)) {
@@ -1017,6 +1132,7 @@ class PrayerNotificationService {
         'prayerName': prayerName,
         'rawResourceName': sound.rawResourceName,
         'filePath': sound.filePath,
+        'volume': _sanitizeAdhanVolume(volume),
       });
     } catch (_) {
       // The visible notification still fires if native playback cannot schedule.
@@ -1047,14 +1163,39 @@ class PrayerNotificationService {
         importance: Importance.high,
         priority: Priority.high,
         category: AndroidNotificationCategory.reminder,
+        timeoutAfter: 5 * 60 * 1000,
       ),
       iOS: DarwinNotificationDetails(),
       macOS: DarwinNotificationDetails(),
     );
   }
 
-  static Future<NotificationDetails> _adhanNotificationDetails(
-    AdhanSoundOption sound, {
+  static NotificationDetails _prayerTimeNotificationDetails(
+    DateTime prayerTime,
+  ) {
+    return NotificationDetails(
+      android: AndroidNotificationDetails(
+        _channelId,
+        _channelName,
+        channelDescription: _channelDescription,
+        icon: _notificationIconName,
+        largeIcon: const DrawableResourceAndroidBitmap(
+          _notificationLargeIconName,
+        ),
+        color: _notificationColor,
+        importance: Importance.high,
+        priority: Priority.high,
+        category: AndroidNotificationCategory.reminder,
+        timeoutAfter: _adhanElapsedVisibility.inMilliseconds,
+        showWhen: true,
+        when: prayerTime.millisecondsSinceEpoch,
+      ),
+      iOS: const DarwinNotificationDetails(),
+      macOS: const DarwinNotificationDetails(),
+    );
+  }
+
+  static Future<NotificationDetails> _adhanNotificationDetails({
     required DateTime prayerTime,
   }) async {
     final bypassDnd = await _canBypassDnd();
@@ -1126,4 +1267,50 @@ class PrayerNotificationService {
   static bool get _isLinux => defaultTargetPlatform == TargetPlatform.linux;
 
   static bool get _isWindows => defaultTargetPlatform == TargetPlatform.windows;
+
+  static double _sanitizeAdhanVolume(double volume) {
+    if (volume.isNaN || volume.isInfinite) {
+      return defaultAdhanVolume;
+    }
+    return volume.clamp(0.1, 1).toDouble();
+  }
+
+  // ───────────────────────────────────────────────
+  // Public helpers for external custom notifications
+  // ───────────────────────────────────────────────
+
+  /// Schedule a repeating custom notification (e.g. Sunnah Reminders).
+  static Future<void> scheduleCustom({
+    required int id,
+    required String title,
+    required String body,
+    required tz.TZDateTime scheduledDate,
+    required NotificationDetails notificationDetails,
+    DateTimeComponents? matchDateTimeComponents,
+    String? payload,
+  }) async {
+    await _initializeNotifications(requestPermissions: false);
+    final mode = await _androidScheduleMode();
+    await _notifications.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: scheduledDate,
+      notificationDetails: notificationDetails,
+      androidScheduleMode: mode,
+      matchDateTimeComponents: matchDateTimeComponents,
+      payload: payload,
+    );
+  }
+
+  /// Cancel a custom notification by its [id].
+  static Future<void> cancelCustom(int id) async {
+    await _initializeNotifications(requestPermissions: false);
+    await _notifications.cancel(id: id);
+  }
+}
+
+@pragma('vm:entry-point')
+void _notificationTapBackground(NotificationResponse notificationResponse) {
+  // Can be used to handle background taps if needed, e.g., tracking analytics.
 }

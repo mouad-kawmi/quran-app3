@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:quran_app/core/app_settings.dart';
 import 'package:quran_app/core/prayer_notification_service.dart';
+import 'package:quran_app/core/quran_database.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/navigation/app_shell.dart';
 
@@ -36,7 +37,8 @@ Future<void> _prepareApp(AppSettingsController settings) async {
 
 Future<void> _initializeAppServices() async {
   try {
-    await PrayerNotificationService.initialize();
+    unawaited(QuranRepository.instance.warmUp());
+    await PrayerNotificationService.initialize(refreshReminders: true);
   } catch (error, stackTrace) {
     FlutterError.reportError(
       FlutterErrorDetails(

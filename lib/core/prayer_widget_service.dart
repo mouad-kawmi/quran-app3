@@ -18,6 +18,8 @@ class PrayerWidgetService {
     }
 
     try {
+      final timelineMoments = _timelineMoments(location, todayMoments);
+
       await _channel.invokeMethod<void>('update', {
         'cityName': location.name,
         'hijriDate': hijriDate,
@@ -32,13 +34,10 @@ class PrayerWidgetService {
             schedule.previousPrayer.time.millisecondsSinceEpoch,
         'prayers': [
           for (final moment in todayMoments)
-            {
-              'name': PrayerService.getPrayerName(moment.prayer),
-              'time': PrayerService.toWesternDigits(
-                _formatTime(moment.time),
-              ),
-              'millis': moment.time.millisecondsSinceEpoch,
-            },
+            _serializePrayerMoment(moment),
+        ],
+        'timelinePrayers': [
+          for (final moment in timelineMoments) _serializePrayerMoment(moment),
         ],
       });
     } catch (_) {
@@ -50,5 +49,24 @@ class PrayerWidgetService {
   static String _formatTime(DateTime time) {
     String twoDigits(int value) => value.toString().padLeft(2, '0');
     return '${twoDigits(time.hour)}:${twoDigits(time.minute)}';
+  }
+
+  static List<PrayerMoment> _timelineMoments(
+    PrayerLocation location,
+    List<PrayerMoment> todayMoments,
+  ) {
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    final tomorrowMoments = PrayerService.prayerMoments(
+      PrayerService.getPrayerTimes(location.coordinates, tomorrow),
+    );
+    return [...todayMoments, ...tomorrowMoments];
+  }
+
+  static Map<String, Object> _serializePrayerMoment(PrayerMoment moment) {
+    return {
+      'name': PrayerService.getPrayerName(moment.prayer),
+      'time': PrayerService.toWesternDigits(_formatTime(moment.time)),
+      'millis': moment.time.millisecondsSinceEpoch,
+    };
   }
 }

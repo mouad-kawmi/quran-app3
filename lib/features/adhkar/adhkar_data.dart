@@ -201,7 +201,7 @@ final List<AdhkarModel> adhkarData = [
     ],
   ),
   AdhkarModel(
-    title: 'أذكار جامعة',
+    title: 'أذكار شاملة',
     items: [
       DhikrItem(text: 'سبحان الله وبحمده، سبحان الله العظيم.', count: 100),
       DhikrItem(text: 'لا حول ولا قوة إلا بالله.', count: 100),

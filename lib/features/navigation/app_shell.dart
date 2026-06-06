@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:quran_app/core/prayer_notification_service.dart';
 import 'package:quran_app/core/theme.dart';
+import 'package:quran_app/features/adhkar/adhkar_data.dart';
+import 'package:quran_app/features/adhkar/adhkar_detail_screen.dart';
 import 'package:quran_app/features/adhkar/adhkar_screen.dart';
 import 'package:quran_app/features/home/home_screen.dart';
 import 'package:quran_app/features/more/more_screen.dart';
@@ -26,6 +29,49 @@ class _AppShellState extends State<AppShell> {
   );
 
   int _currentIndex = 0;
+  StreamSubscription<String>? _notifSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifSub = PrayerNotificationService.onNotificationClick.listen((payload) {
+      if (payload.startsWith('sunnah:')) {
+        final id = payload.split(':')[1];
+        if (id.contains('adhkar')) {
+          _selectTab(3); // Adhkar tab
+          // Allow tab switch to happen first
+          Future.delayed(const Duration(milliseconds: 100), () {
+            AdhkarModel? targetCategory;
+            if (id == 'morning_adhkar') {
+              targetCategory = adhkarData.firstWhere((e) => e.title.contains('الصباح'));
+            } else if (id == 'evening_adhkar') {
+              targetCategory = adhkarData.firstWhere((e) => e.title.contains('المساء'));
+            } else if (id == 'sleep_adhkar') {
+              targetCategory = adhkarData.firstWhere((e) => e.title.contains('النوم'));
+            }
+            if (targetCategory != null) {
+              final navigator = _navigatorKeys[3].currentState;
+              if (navigator != null) {
+                // Ensure we don't push multiple times
+                navigator.popUntil((route) => route.isFirst);
+                navigator.push(MaterialPageRoute(
+                  builder: (context) => AdhkarDetailScreen(category: targetCategory!),
+                ));
+              }
+            }
+          });
+        } else {
+          _selectTab(4); // More tab (for Sunnah reminders or other things)
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notifSub?.cancel();
+    super.dispose();
+  }
 
   void _selectTab(int index) {
     if (index == _currentIndex) {

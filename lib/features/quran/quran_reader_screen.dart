@@ -1,14 +1,16 @@
 import 'dart:async';
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:quran/quran.dart' as quran;
+import 'package:quran_app/core/app_settings.dart';
 import 'package:quran_app/core/quran_bookmark_service.dart';
 import 'package:quran_app/core/reading_progress_service.dart';
 import 'package:quran_app/core/tafsir_service.dart';
 import 'package:quran_app/core/theme.dart';
+import 'package:quran_app/features/quran/ayah_share_screen.dart';
+import 'package:quran_app/features/quran/qcf_mushaf_page.dart';
 import 'package:quran_app/features/quran/quran_audio_player.dart';
+import 'package:quran_app/features/quran/word_translation_sheet.dart';
 import 'package:share_plus/share_plus.dart';
 
 class QuranReaderScreen extends StatefulWidget {
@@ -30,21 +32,21 @@ class QuranReaderScreen extends StatefulWidget {
 class _QuranReaderScreenState extends State<QuranReaderScreen> {
   late final PageController _pageController;
   late int _currentPage;
-  late int _audioSurah;
   int? _selectedSurah;
   int? _selectedAyah;
+  Timer? _saveLastReadTimer;
+  bool _isAudioSheetOpen = false;
   final QuranAudioController _audioController = QuranAudioController();
 
   @override
   void initState() {
     super.initState();
     _currentPage = _initialPage();
-    _audioSurah = widget.surahNumber;
-    _selectedSurah = widget.initialAyah == null ? null : widget.surahNumber;
-    _selectedAyah = widget.initialAyah;
     _pageController = PageController(initialPage: _currentPage - 1);
 
     _audioController.addListener(_onAudioChanged);
+    unawaited(_loadPageFontSafely(_currentPage));
+    _scheduleNearbyPageFonts(_currentPage);
     unawaited(
       ReadingProgressService.saveLastRead(
         surah: widget.surahNumber,
@@ -62,19 +64,22 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   @override
   void dispose() {
+    _saveLastReadTimer?.cancel();
     _audioController.removeListener(_onAudioChanged);
     _audioController.dispose();
     _pageController.dispose();
     super.dispose();
   }
 
+  int? _lastHighlightedSurah;
+  int? _lastHighlightedAyah;
+
   void _onAudioChanged() {
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
 
     final playingSurah = _audioController.currentPlayingSurah;
     final playingAyah = _audioController.currentPlayingVerse;
+
     if (playingSurah != null && playingAyah != null) {
       final targetPage = quran.getPageNumber(playingSurah, playingAyah);
       if (targetPage != _currentPage && _pageController.hasClients) {
@@ -88,24 +93,52 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
       }
     }
 
-    setState(() {});
+    // ← إعادة البناء فقط إذا تغيرت الآية المميزة فعلاً
+    if (_lastHighlightedSurah != playingSurah ||
+        _lastHighlightedAyah != playingAyah) {
+      _lastHighlightedSurah = playingSurah;
+      _lastHighlightedAyah = playingAyah;
+      setState(() {});
+    }
   }
 
   void _onPageChanged(int index) {
     final page = index + 1;
     final position = _firstPositionInPage(page);
 
-    setState(() {
-      _currentPage = page;
-      _audioSurah = position.surah;
-    });
+    _currentPage = page;
 
-    unawaited(
-      ReadingProgressService.saveLastRead(
-        surah: position.surah,
-        ayah: position.ayah,
-      ),
-    );
+    _scheduleNearbyPageFonts(page);
+    _queueLastReadSave(position.surah, position.ayah);
+  }
+
+  Future<void> _showAudioControls({
+    required int surahNumber,
+    int? startAyah,
+  }) async {
+    if (_isAudioSheetOpen || !mounted) return;
+
+    _isAudioSheetOpen = true;
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.18),
+        isScrollControlled: true,
+        builder: (context) {
+          return Directionality(
+            textDirection: TextDirection.rtl,
+            child: QuranAudioPlayer(
+              surahNumber: surahNumber,
+              initialAyah: startAyah,
+              controller: _audioController,
+            ),
+          );
+        },
+      );
+    } finally {
+      _isAudioSheetOpen = false;
+    }
   }
 
   Future<void> _showVerseMenu(int surah, int ayah) async {
@@ -118,38 +151,45 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final isBookmarked = await QuranBookmarkService.isBookmarked(surah, ayah);
     if (!mounted) return;
 
-    showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppTheme.surfaceColor(context),
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
         return Directionality(
           textDirection: TextDirection.rtl,
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     'الآية $ayah من سورة ${quran.getSurahNameArabic(surah)}',
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 18),
                   ListTile(
                     leading: const Icon(
-                      Icons.play_circle_outline,
+                      Icons.play_circle_outline_rounded,
                       color: AppTheme.primaryColor,
                     ),
                     title: const Text('تشغيل من هذه الآية'),
                     onTap: () {
                       Navigator.pop(context);
                       _audioController.playVerseRequest(surah, ayah);
+                      unawaited(
+                        _showAudioControls(
+                          surahNumber: surah,
+                          startAyah: ayah,
+                        ),
+                      );
                     },
                   ),
                   ListTile(
@@ -175,7 +215,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                           content: Text(
                             added
                                 ? 'تم حفظ العلامة.'
-                                : 'تحيدات العلامة من هذا الموضع.',
+                                : 'تم حذف العلامة من هذا الموضع.',
                           ),
                         ),
                       );
@@ -194,15 +234,45 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                   ),
                   ListTile(
                     leading: const Icon(
+                      Icons.translate_rounded,
+                      color: AppTheme.primaryColor,
+                    ),
+                    title: const Text('الترجمة (English)'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      WordTranslationSheet.show(
+                        context,
+                        surahNumber: surah,
+                        ayahNumber: ayah,
+                        tappedWord: '',
+                        onPlayAudio: () {
+                          _audioController.playVerseRequest(surah, ayah);
+                          unawaited(
+                            _showAudioControls(
+                              surahNumber: surah,
+                              startAyah: ayah,
+                            ),
+                          );
+                        },
+                        onShowTafsir: () => _showTafsir(surah, ayah),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(
                       Icons.share_outlined,
                       color: AppTheme.primaryColor,
                     ),
                     title: const Text('مشاركة الآية'),
                     onTap: () {
                       Navigator.pop(context);
-                      SharePlus.instance.share(
-                        ShareParams(
-                          text: '${quran.getVerse(surah, ayah)} [$surah:$ayah]',
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AyahShareScreen(
+                            surahNumber: surah,
+                            ayahNumber: ayah,
+                          ),
                         ),
                       );
                     },
@@ -217,7 +287,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   }
 
   void _showTafsir(int surah, int ayah) {
-    showDialog(
+    showDialog<void>(
       context: context,
       builder: (context) => Directionality(
         textDirection: TextDirection.rtl,
@@ -241,11 +311,11 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     children: [
                       Text(
                         quran.getVerse(surah, ayah),
-                        style: GoogleFonts.amiri(
-                          fontSize: 22,
-                          height: 1.9,
+                        style: const TextStyle(
                           color: AppTheme.primaryColor,
+                          fontSize: 22,
                           fontWeight: FontWeight.bold,
+                          height: 1.9,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -270,28 +340,91 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     );
   }
 
+  Future<void> _showSettingsMenu() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppTheme.surfaceColor(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 16),
+              child: StatefulBuilder(
+                builder: (context, setModalState) {
+                  final settings = AppSettingsScope.watch(context);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'إعدادات القراءة',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      SwitchListTile(
+                        title: const Text('استخدام خط المصحف العثماني (QCF)'),
+                        subtitle: const Text('شكل الصفحات يطابق مصحف المدينة'),
+                        activeColor: AppTheme.primaryColor,
+                        value: settings.useQcfFont,
+                        onChanged: (value) async {
+                          await settings.setUseQcfFont(value);
+                        },
+                      ),
+                      if (!settings.useQcfFont) ...[
+                        const Divider(),
+                        Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'حجم الخط العادي: ${settings.quranNormalFontSize.toInt()}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Slider(
+                                value: settings.quranNormalFontSize,
+                                min: 16,
+                                max: 60,
+                                activeColor: AppTheme.primaryColor,
+                                onChanged: (value) async {
+                                  await settings.setQuranNormalFontSize(value);
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          backgroundColor: AppTheme.primaryColor,
-          title: Text('الصفحة $_currentPage'),
-          centerTitle: true,
-        ),
         body: PageView.builder(
           controller: _pageController,
           onPageChanged: _onPageChanged,
+          allowImplicitScrolling: true,
           itemCount: quran.totalPagesCount,
           itemBuilder: (context, index) {
             return _buildPage(index + 1);
           },
-        ),
-        bottomNavigationBar: QuranAudioPlayer(
-          surahNumber: _audioSurah,
-          controller: _audioController,
         ),
       ),
     );
@@ -301,149 +434,119 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
     final position = _firstPositionInPage(pageNumber);
     final juz = quran.getJuzNumber(position.surah, position.ayah);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 18),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
-          decoration: BoxDecoration(
-            color: AppTheme.elevatedSurfaceColor(context),
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppTheme.softBorderColor(context)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: AppTheme.isDark(context) ? 0.2 : 0.08,
-                ),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      'جزء $juz',
-                      style: TextStyle(
-                        color: AppTheme.mutedTextColor(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      _pageSummary(pageNumber),
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      'صفحة $pageNumber',
-                      style: TextStyle(
-                        color: AppTheme.mutedTextColor(context),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-                const Divider(height: 28),
-                _buildPageText(pageNumber),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return _QuranReaderPage(
+      pageNumber: pageNumber,
+      juzNumber: juz,
+      pageSummary: _pageSummary(pageNumber),
+      selectedSurah: _selectedSurah,
+      selectedAyah: _selectedAyah,
+      highlightedSurah: _audioController.currentPlayingSurah,
+      highlightedAyah: _audioController.currentPlayingVerse,
+      onVerseTap: _showVerseMenu,
+      onSettingsTap: _showSettingsMenu,
     );
   }
 
-  Widget _buildPageText(int pageNumber) {
-    final spans = <InlineSpan>[];
-    final pageData = quran.getPageData(pageNumber);
+  void _queueLastReadSave(int surah, int ayah) {
+    _saveLastReadTimer?.cancel();
+    _saveLastReadTimer = Timer(const Duration(milliseconds: 450), () {
+      unawaited(ReadingProgressService.saveLastRead(surah: surah, ayah: ayah));
+    });
+  }
 
-    for (final section in pageData) {
-      final data = section as Map;
-      final surah = data['surah'] as int;
-      final start = data['start'] as int;
-      final end = data['end'] as int;
+  void _scheduleNearbyPageFonts(int pageNumber) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
 
-      if (start == 1) {
-        spans.add(
-          WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: _SurahHeader(name: quran.getSurahNameArabic(surah)),
-          ),
-        );
-      }
+      QcfMushafAssets.warmUpPageWindow(pageNumber, radius: 3);
+    });
+  }
 
-      for (var verse = start; verse <= end; verse++) {
-        final isHighlighted =
-            _audioController.currentPlayingSurah == surah &&
-            _audioController.currentPlayingVerse == verse;
-        final isSelected = _selectedSurah == surah && _selectedAyah == verse;
-
-        spans.add(
-          TextSpan(
-            text:
-                '${quran.getVerse(surah, verse)} ${quran.getVerseEndSymbol(verse)} ',
-            style: GoogleFonts.amiri(
-              fontSize: 23,
-              height: 2.15,
-              backgroundColor: isHighlighted || isSelected
-                  ? AppTheme.primaryColor.withValues(alpha: 0.14)
-                  : null,
-              color: isHighlighted || isSelected
-                  ? AppTheme.primaryColor
-                  : AppTheme.primaryTextColor(context),
-            ),
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => _showVerseMenu(surah, verse),
-          ),
-        );
-      }
+  Future<void> _loadPageFontSafely(int pageNumber) async {
+    try {
+      await QcfMushafAssets.loadPageFont(pageNumber);
+    } catch (_) {
+      // The page widget falls back to regular Quran text if the QCF asset fails.
     }
+  }
+}
 
-    return RichText(
-      textAlign: TextAlign.justify,
-      text: TextSpan(
-        children: spans,
-        style: TextStyle(color: AppTheme.primaryTextColor(context)),
+/// StatelessWidget — مابغاش StatefulWidget هنا لأن
+/// الـ Parent (QuranReaderScreen) هو اللي يتحكم في الـ state.
+/// AutomaticKeepAliveClientMixin مازال ياخدو من PageView مباشرة.
+class _QuranReaderPage extends StatefulWidget {
+  const _QuranReaderPage({
+    required this.pageNumber,
+    required this.juzNumber,
+    required this.pageSummary,
+    required this.selectedSurah,
+    required this.selectedAyah,
+    required this.highlightedSurah,
+    required this.highlightedAyah,
+    required this.onVerseTap,
+    required this.onSettingsTap,
+  });
+
+  final int pageNumber;
+  final int juzNumber;
+  final String pageSummary;
+  final int? selectedSurah;
+  final int? selectedAyah;
+  final int? highlightedSurah;
+  final int? highlightedAyah;
+  final MushafVerseTap onVerseTap;
+  final VoidCallback onSettingsTap;
+
+  @override
+  State<_QuranReaderPage> createState() => _QuranReaderPageState();
+}
+
+/// wantKeepAlive = true ← كيحفظ الصفحة في الذاكرة وميعيدش بناءها
+/// هذا هو الإصلاح الأكبر للأداء
+class _QuranReaderPageState extends State<_QuranReaderPage>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // ← مهم مع AutomaticKeepAliveClientMixin
+    return RepaintBoundary(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+          child: QcfMushafPage(
+            pageNumber: widget.pageNumber,
+            juzNumber: widget.juzNumber,
+            pageSummary: widget.pageSummary,
+            selectedSurah: widget.selectedSurah,
+            selectedAyah: widget.selectedAyah,
+            highlightedSurah: widget.highlightedSurah,
+            highlightedAyah: widget.highlightedAyah,
+            onVerseTap: widget.onVerseTap,
+            onSettingsTap: widget.onSettingsTap,
+          ),
+        ),
       ),
     );
   }
 }
 
-class _SurahHeader extends StatelessWidget {
-  const _SurahHeader({required this.name});
-
-  final String name;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+Future<T?> openQuranReader<T>(
+  BuildContext context, {
+  required int surahNumber,
+  int? initialAyah,
+  int? initialPage,
+}) {
+  return Navigator.of(context, rootNavigator: true).push<T>(
+    MaterialPageRoute(
+      builder: (context) => QuranReaderScreen(
+        surahNumber: surahNumber,
+        initialAyah: initialAyah,
+        initialPage: initialPage,
       ),
-      child: Text(
-        name,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          color: AppTheme.primaryColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 18,
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
 
 ({int surah, int ayah}) _firstPositionInPage(int page) {

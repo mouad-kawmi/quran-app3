@@ -4,10 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:quran_app/core/app_settings.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/adhan/adhan_settings_screen.dart';
+import 'package:quran_app/features/more/asma_ul_husna_screen.dart';
+import 'package:quran_app/features/more/contact_us_screen.dart';
+import 'package:quran_app/features/more/sunnah_reminders_screen.dart';
 import 'package:quran_app/features/khatma/khatma_screen.dart';
 import 'package:quran_app/features/prayer_times/prayer_times_screen.dart';
 import 'package:quran_app/features/qibla/qibla_screen.dart';
 import 'package:quran_app/features/quran/downloaded_audio_screen.dart';
+import 'package:quran_app/features/quran/tajweed/tajweed_rules_screen.dart';
+import 'package:quran_app/features/bukhari/bukhari_books_screen.dart';
 import 'package:share_plus/share_plus.dart';
 
 class MoreScreen extends StatelessWidget {
@@ -74,6 +79,42 @@ class MoreScreen extends StatelessWidget {
                 ),
               ),
             ),
+            _buildMoreItem(
+              context,
+              Icons.auto_awesome_rounded,
+              'أسماء الله الحسنى',
+              'تصفح الأسماء التسعة والتسعين مع معانيها',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AsmaUlHusnaScreen(),
+                ),
+              ),
+            ),
+            _buildMoreItem(
+              context,
+              Icons.notifications_active_rounded,
+              'تنبيهات السنن',
+              'تذكيرات بسورة الكهف والملك والأذكار والصيام',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SunnahRemindersScreen(),
+                ),
+              ),
+            ),
+            _buildMoreItem(
+              context,
+              Icons.book_rounded,
+              'صحيح البخاري',
+              'الأحاديث النبوية الشريفة',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const BukhariBooksScreen(),
+                ),
+              ),
+            ),
             const Divider(),
             _buildSection('الإعدادات'),
             _buildMoreItem(
@@ -85,6 +126,18 @@ class MoreScreen extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const AdhanSettingsScreen(),
+                ),
+              ),
+            ),
+            _buildMoreItem(
+              context,
+              Icons.auto_stories_rounded,
+              'أحكام التجويد الملونة',
+              'تعلم أحكام التجويد وإدارة الألوان',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const TajweedRulesScreen(),
                 ),
               ),
             ),
@@ -104,6 +157,18 @@ class MoreScreen extends StatelessWidget {
             ),
             const Divider(),
             _buildSection('عن التطبيق'),
+            _buildMoreItem(
+              context,
+              Icons.mark_email_unread_rounded,
+              'تواصل معنا',
+              'أرسل رسالة للإبلاغ عن خطأ أو لاقتراح جديد',
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ContactUsScreen(),
+                ),
+              ),
+            ),
             _buildMoreItem(
               context,
               Icons.info_outline_rounded,
