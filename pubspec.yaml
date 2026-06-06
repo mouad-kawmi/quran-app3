@@ -90,7 +90,6 @@ flutter:
     - assets/branding/ic_splash_logo.svg
     - assets/branding/nor_quran_2.png
     - assets/tafsir/ar_tafsir_muyassar.json
-    - assets/bukhari/ara-bukhari.json
     - quran-qcf4-main/pages/
     - quran-qcf4-main/fonts/
 

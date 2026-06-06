@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:quran_app/features/bukhari/bukhari_models.dart';
 
 Map<String, dynamic> _parseJson(String jsonString) {
@@ -11,6 +13,10 @@ class BukhariService {
   static final BukhariService _instance = BukhariService._internal();
   factory BukhariService() => _instance;
   BukhariService._internal();
+
+  static const String _downloadUrl =
+      'https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@1/editions/ara-bukhari.min.json';
+  static const String _fileName = 'ara-bukhari.json';
 
   List<BukhariBook> _books = [];
 
@@ -115,15 +121,66 @@ class BukhariService {
     '97': 'كتاب التَّوْحِيدِ',
   };
 
-  /// Load books and hadiths from local JSON
+  Future<String> get _localPath async {
+    final directory = await getApplicationDocumentsDirectory();
+    return '${directory.path}/$_fileName';
+  }
+
+  /// Check if the database is already downloaded
+  Future<bool> isDownloaded() async {
+    final path = await _localPath;
+    return File(path).existsSync();
+  }
+
+  /// Delete the downloaded file
+  Future<void> deleteBukhariData() async {
+    final path = await _localPath;
+    final file = File(path);
+    if (file.existsSync()) {
+      await file.delete();
+      _books.clear();
+    }
+  }
+
+  /// Download the database and report progress
+  Future<void> downloadBukhariData(Function(double) onProgress) async {
+    final path = await _localPath;
+    final file = File(path);
+
+    final request = http.Request('GET', Uri.parse(_downloadUrl));
+    final response = await http.Client().send(request);
+    
+    if (response.statusCode != 200) {
+      throw Exception('فشل تحميل الملف: تأكد من اتصالك بالإنترنت');
+    }
+
+    final contentLength = response.contentLength ?? 9400000;
+    int received = 0;
+    final sink = file.openWrite();
+
+    await for (var chunk in response.stream) {
+      received += chunk.length;
+      onProgress(received / contentLength);
+      sink.add(chunk);
+    }
+    await sink.close();
+  }
+
+  /// Load books and hadiths from local file
   Future<List<BukhariBook>> loadBukhari() async {
     if (_books.isNotEmpty) {
       return _books;
     }
 
-      final jsonString =
-          await rootBundle.loadString('assets/bukhari/ara-bukhari.json');
-      final Map<String, dynamic> data = await compute(_parseJson, jsonString);
+    final path = await _localPath;
+    final file = File(path);
+    
+    if (!file.existsSync()) {
+      return [];
+    }
+
+    final jsonString = await file.readAsString();
+    final Map<String, dynamic> data = await compute(_parseJson, jsonString);
 
       final metadata = data['metadata'] as Map<String, dynamic>? ?? {};
       final sections = metadata['sections'] as Map<String, dynamic>? ?? {};
