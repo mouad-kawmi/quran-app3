@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 import 'package:quran_app/core/prayer_notification_service.dart';
 import 'package:quran_app/core/prayer_service.dart';
 import 'package:quran_app/core/theme.dart';
@@ -82,27 +83,23 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
   }
 
   Future<void> _startSetupGuide() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
-        return Directionality(
-          textDirection: TextDirection.rtl,
-          child: AlertDialog(
-            title: const Text('إكمال تفعيل الأذان'),
-            content: const Text(
-              'سيطلب التطبيق تفعيل التنبيهات والوقت الدقيق وتجاوز عدم الإزعاج واستثناء البطارية، ثم يعيد برمجة الأذان حتى يعمل في وقته.',
+        return AlertDialog(
+          title: Text(l10n.adhanCompleteSetup),
+          content: Text(l10n.adhanCompleteSetupContent),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.later),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('لاحقا'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                child: const Text('ابدأ الإعداد'),
-              ),
-            ],
-          ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.adhanStartSetup),
+            ),
+          ],
         );
       },
     );
@@ -204,13 +201,13 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم اعتماد صوت الأذان: ${sound.name}')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.adhanSoundSet(sound.name))),
       );
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('تعذر اختيار الملف الصوتي. حاول مرة أخرى.'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.adhanSoundPickError),
         ),
       );
     } finally {
@@ -309,10 +306,8 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'بعد منح الإذن، اضغط إعادة البرمجة لتحديث تنبيهات الأذان.',
-          ),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.adhanPolicySuccess),
         ),
       );
     } finally {
@@ -356,8 +351,8 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
         SnackBar(
           content: Text(
             hasLocation
-                ? 'تم تحديث برمجة الأذان والتنبيهات.'
-                : 'لا يوجد موقع محفوظ بعد. افتح الصفحة الرئيسية لتحديد مواقيت الصلاة.',
+                ? AppLocalizations.of(context)!.adhanRescheduleSuccess
+                : AppLocalizations.of(context)!.adhanRescheduleNoLocation,
           ),
         ),
       );
@@ -399,7 +394,9 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
 
   void _saveAdhanVolume(double volume) {
     final normalized = _normalizeAdhanVolume(volume);
-    _saveInBackground(() => PrayerNotificationService.saveAdhanVolume(normalized));
+    _saveInBackground(
+      () => PrayerNotificationService.saveAdhanVolume(normalized),
+    );
 
     final previewingSoundId = _previewingSoundId;
     if (previewingSoundId == null) {
@@ -453,7 +450,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تعذر تشغيل معاينة الأذان.')),
+        SnackBar(content: Text(AppLocalizations.of(context)!.adhanPreviewError)),
       );
     } finally {
       if (mounted) {
@@ -472,31 +469,30 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text(
-            'إعدادات الأذان',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          '${l10n.settings} ${l10n.adhan}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : _buildContent(),
       ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _buildContent(),
     );
   }
 
   Widget _buildContent() {
+    final l10n = AppLocalizations.of(context)!;
     final settings = _settings!;
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         _buildHealthCard(),
         const SizedBox(height: 18),
-        _buildSectionTitle('صوت الأذان'),
+        _buildSectionTitle(l10n.adhanVolume),
         _buildUploadSoundButton(),
         const SizedBox(height: 10),
         _buildVolumeControl(settings.volume),
@@ -505,7 +501,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
           (sound) => _buildSoundOption(sound, settings.sound.id),
         ),
         const SizedBox(height: 18),
-        _buildSectionTitle('الصلوات'),
+        _buildSectionTitle(l10n.prayersLabel),
         ..._prayers.map(
           (prayer) => _buildPrayerSwitch(prayer, settings.isEnabledFor(prayer)),
         ),
@@ -544,7 +540,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'حالة الأذان والتنبيهات',
+                  AppLocalizations.of(context)!.adhanStatusTitle,
                   style: TextStyle(
                     color: AppTheme.primaryTextColor(context),
                     fontWeight: FontWeight.bold,
@@ -553,7 +549,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 ),
               ),
               IconButton(
-                tooltip: 'تحديث الحالة',
+                tooltip: AppLocalizations.of(context)!.refreshStatus,
                 onPressed: _isRefreshingHealth ? null : _refreshHealth,
                 icon: _isRefreshingHealth
                     ? const SizedBox(
@@ -574,49 +570,49 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
           else ...[
             _buildHealthRow(
               Icons.notifications_active_rounded,
-              'إذن التنبيهات',
+              AppLocalizations.of(context)!.adhanNotificationsPerm,
               health.notificationsEnabled,
-              'مفعّل',
-              'يلزم تفعيله لإظهار تنبيهات الأذان',
+              AppLocalizations.of(context)!.enabled,
+              AppLocalizations.of(context)!.adhanNotificationsPermDesc,
             ),
             _buildHealthRow(
               Icons.alarm_on_rounded,
-              'التنبيه في الوقت الدقيق',
+              AppLocalizations.of(context)!.adhanExactTimePerm,
               health.exactAlarmsEnabled,
-              'مفعّل للوقت الدقيق',
-              'قد يتأخر الأذان إذا بقي غير مفعّل',
+              AppLocalizations.of(context)!.adhanExactTimeOk,
+              AppLocalizations.of(context)!.adhanExactTimePermDesc,
             ),
             _buildHealthRow(
               Icons.do_not_disturb_off_rounded,
-              'تجاوز عدم الإزعاج',
+              AppLocalizations.of(context)!.adhanDndPerm,
               health.notificationPolicyAccessGranted,
-              'مسموح',
-              'اختياري عند منع أصوات المنبهات',
+              AppLocalizations.of(context)!.allowed,
+              AppLocalizations.of(context)!.adhanDndPermDesc,
             ),
             _buildHealthRow(
               Icons.battery_saver_rounded,
-              'استثناء البطارية',
+              AppLocalizations.of(context)!.adhanBatteryPerm,
               health.batteryOptimizationsIgnored,
-              'مستثنى من التوفير',
-              'يساعد على استمرار الأذان في الخلفية',
+              AppLocalizations.of(context)!.adhanBatteryOk,
+              AppLocalizations.of(context)!.adhanBatteryPermDesc,
             ),
             _buildHealthRow(
               Icons.my_location_rounded,
-              'الموقع المحفوظ',
+              AppLocalizations.of(context)!.adhanLocationPerm,
               health.hasStoredLocation,
-              'موجود',
-              'افتح الرئيسية لتحديد المواقيت',
+              AppLocalizations.of(context)!.found,
+              AppLocalizations.of(context)!.adhanLocationPermDesc,
             ),
             _buildHealthRow(
               Icons.event_available_rounded,
-              'التنبيهات المبرمجة',
+              AppLocalizations.of(context)!.adhanScheduled,
               health.pendingNotificationCount > 0,
-              '${health.pendingNotificationCount} تنبيه',
-              'لم تتم برمجة التنبيهات بعد',
+              AppLocalizations.of(context)!.adhanScheduledCount(health.pendingNotificationCount),
+              AppLocalizations.of(context)!.adhanScheduledNotYet,
             ),
             const SizedBox(height: 6),
             Text(
-              'يعمل الأذان كمنبه في الخلفية. إذا كان وضع عدم الإزعاج يمنع أصوات المنبهات، فعّل إذن تجاوز عدم الإزعاج ثم أعد البرمجة.',
+              AppLocalizations.of(context)!.adhanBgTip,
               style: TextStyle(
                 color: AppTheme.mutedTextColor(context),
                 fontSize: 12,
@@ -629,7 +625,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
               children: [
                 _buildActionButton(
                   icon: Icons.notifications_rounded,
-                  label: 'تفعيل التنبيهات',
+                  label: AppLocalizations.of(context)!.enableNotifications,
                   busy: _isRequestingNotifications,
                   onPressed: health.notificationsEnabled
                       ? null
@@ -637,7 +633,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 ),
                 _buildActionButton(
                   icon: Icons.alarm_add_rounded,
-                  label: 'تفعيل الوقت الدقيق',
+                  label: AppLocalizations.of(context)!.enableExactAlarm,
                   busy: _isRequestingExactAlarm,
                   onPressed: health.exactAlarmsEnabled
                       ? null
@@ -645,7 +641,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 ),
                 _buildActionButton(
                   icon: Icons.do_not_disturb_off_rounded,
-                  label: 'تجاوز عدم الإزعاج',
+                  label: AppLocalizations.of(context)!.bypassDnd,
                   busy: _isRequestingPolicyAccess,
                   onPressed: health.notificationPolicyAccessGranted
                       ? null
@@ -653,7 +649,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 ),
                 _buildActionButton(
                   icon: Icons.battery_charging_full_rounded,
-                  label: 'إعداد البطارية',
+                  label: AppLocalizations.of(context)!.setupBattery,
                   busy: _isRequestingBattery,
                   onPressed: health.batteryOptimizationsIgnored
                       ? null
@@ -661,7 +657,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 ),
                 _buildActionButton(
                   icon: Icons.update_rounded,
-                  label: 'إعادة البرمجة',
+                  label: AppLocalizations.of(context)!.rescheduleAdhan,
                   busy: _isRescheduling,
                   onPressed: _rescheduleNotifications,
                 ),
@@ -754,7 +750,9 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
       decoration: BoxDecoration(
         color: AppTheme.elevatedSurfaceColor(context),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppTheme.primaryColor.withValues(alpha: 0.14)),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.14),
+        ),
       ),
       child: ListTile(
         leading: _isPickingCustomSound
@@ -767,12 +765,12 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
                 Icons.upload_file_rounded,
                 color: AppTheme.primaryColor,
               ),
-        title: const Text(
-          'إضافة أذان من الهاتف',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          AppLocalizations.of(context)!.adhanUploadSound,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: const Text('اختر ملفا صوتيا ليستعمله التطبيق للأذان'),
-        trailing: const Icon(Icons.chevron_left_rounded),
+        subtitle: Text(AppLocalizations.of(context)!.adhanUploadSoundDesc),
+        trailing: Icon(Directionality.of(context) == TextDirection.rtl ? Icons.chevron_left_rounded : Icons.chevron_right_rounded),
         onTap: _isPickingCustomSound ? null : _pickCustomSound,
       ),
     );
@@ -792,14 +790,11 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.volume_up_rounded,
-                color: AppTheme.primaryColor,
-              ),
+              const Icon(Icons.volume_up_rounded, color: AppTheme.primaryColor),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'مستوى صوت الأذان',
+                  AppLocalizations.of(context)!.adhanVolume,
                   style: TextStyle(
                     color: AppTheme.primaryTextColor(context),
                     fontWeight: FontWeight.bold,
@@ -875,7 +870,9 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
               ),
               const SizedBox(width: 8),
               IconButton.filledTonal(
-                tooltip: isPreviewing ? 'إيقاف المعاينة' : 'استماع للأذان',
+                tooltip: isPreviewing
+                    ? AppLocalizations.of(context)!.stopPreview
+                    : AppLocalizations.of(context)!.listenAdhan,
                 onPressed: isBusy ? null : () => _toggleSoundPreview(sound),
                 icon: isBusy
                     ? const SizedBox(
@@ -914,10 +911,14 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
           color: AppTheme.primaryColor,
         ),
         title: Text(
-          PrayerService.getPrayerName(prayer),
+          PrayerService.getPrayerName(prayer, AppLocalizations.of(context)!),
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(enabled ? 'الأذان مفعّل' : 'الأذان غير مفعّل'),
+        subtitle: Text(
+          enabled
+              ? AppLocalizations.of(context)!.adhanEnabled
+              : AppLocalizations.of(context)!.adhanDisabled,
+        ),
       ),
     );
   }
@@ -930,7 +931,7 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
-        'أصوات الأذان من Wikimedia Commons تحت رخصة CC BY-SA 4.0: Andrewler و Atcovi.',
+        AppLocalizations.of(context)!.adhanAttribution,
         style: TextStyle(
           color: AppTheme.mutedTextColor(context),
           fontSize: 12,

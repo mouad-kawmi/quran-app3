@@ -80,7 +80,7 @@ class AdhanPlaybackService : Service() {
                 setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                         .build(),
                 )
                 if (filePath.isNotBlank()) {
@@ -127,7 +127,7 @@ class AdhanPlaybackService : Service() {
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_ALARM)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                         .build(),
                 )
                 .setOnAudioFocusChangeListener { }
@@ -199,12 +199,6 @@ class AdhanPlaybackService : Service() {
 
     private fun buildNotification(prayerName: String, triggerAtMillis: Long): Notification {
         createPlaybackChannel()
-        val legacyText = if (prayerName.isBlank()) {
-            "حان وقت الصلاة"
-        } else {
-            "حان وقت صلاة $prayerName"
-        }
-
         val text = if (prayerName.isBlank()) {
             "حان وقت الصلاة"
         } else {
@@ -220,7 +214,7 @@ class AdhanPlaybackService : Service() {
 
         builder
             .setSmallIcon(R.drawable.ic_notification_icon)
-            .setContentTitle("الأذان")
+            .setContentTitle("حان وقت الصلاة")
             .setContentText(text)
             .setWhen(triggerAtMillis)
             .setShowWhen(true)
@@ -228,6 +222,10 @@ class AdhanPlaybackService : Service() {
             .setOngoing(true)
             .setCategory(Notification.CATEGORY_ALARM)
             .setPriority(Notification.PRIORITY_MAX)
+
+        openAppPendingIntent()?.let { builder.setContentIntent(it) }
+
+        builder
             .addAction(
                 android.R.drawable.ic_media_pause,
                 "إيقاف",
@@ -249,6 +247,17 @@ class AdhanPlaybackService : Service() {
             this,
             STOP_REQUEST_CODE,
             intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    private fun openAppPendingIntent(): PendingIntent? {
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName) ?: return null
+        launchIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        return PendingIntent.getActivity(
+            this,
+            OPEN_APP_REQUEST_CODE,
+            launchIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
     }
@@ -305,7 +314,8 @@ class AdhanPlaybackService : Service() {
         private const val PLAYBACK_CHANNEL_ID = "adhan_native_playback"
         private const val PLAYBACK_NOTIFICATION_ID = 990011
         private const val STOP_REQUEST_CODE = 990012
+        private const val OPEN_APP_REQUEST_CODE = 990013
         private const val ADHAN_NOTIFICATION_VISIBILITY_MS = 30L * 60L * 1000L
-        private const val DEFAULT_ADHAN_VOLUME = 0.85
+        private const val DEFAULT_ADHAN_VOLUME = 0.40
     }
 }

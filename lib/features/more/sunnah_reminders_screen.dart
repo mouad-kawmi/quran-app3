@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quran_app/core/sunnah_reminder_service.dart';
 import 'package:quran_app/core/theme.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class SunnahRemindersScreen extends StatefulWidget {
   const SunnahRemindersScreen({super.key});
@@ -28,14 +29,26 @@ class _SunnahRemindersScreenState extends State<SunnahRemindersScreen> {
     setState(() => _states[reminder.id] = value);
     await SunnahReminderService.setEnabled(reminder, value);
     if (mounted && value) {
+      final l10n = AppLocalizations.of(context)!;
+      final locale = Localizations.localeOf(context).languageCode;
       final dow = reminder.weekday;
       final timeStr = _formatTime(reminder.time);
-      final when = dow != null
-          ? 'كل ${_weekdayName(dow)} الساعة $timeStr'
-          : 'يومياً الساعة $timeStr';
+      String when;
+      if (locale == 'en') {
+        when = dow != null ? 'Every ${_weekdayNameEn(dow)} at $timeStr' : 'Daily at $timeStr';
+      } else if (locale == 'fr') {
+        when = dow != null ? 'Chaque ${_weekdayNameFr(dow)} à $timeStr' : 'Chaque jour à $timeStr';
+      } else {
+        when = dow != null ? 'كل ${_weekdayName(dow)} الساعة $timeStr' : 'يومياً الساعة $timeStr';
+      }
+      final msg = locale == 'en'
+          ? '✅ You will be reminded $when'
+          : locale == 'fr'
+          ? '✅ Vous serez rappelé(e) $when'
+          : '✅ سيتم تذكيرك $when';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('✅ سيتم تذكيرك $when'),
+          content: Text(msg),
           duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -55,10 +68,24 @@ class _SunnahRemindersScreenState extends State<SunnahRemindersScreen> {
     4: 'الخميس', 5: 'الجمعة', 6: 'السبت', 7: 'الأحد',
   }[wd]!;
 
-  String _scheduleLabel(SunnahReminder r) {
+  String _weekdayNameEn(int wd) => const {
+    1: 'Monday', 2: 'Tuesday', 3: 'Wednesday',
+    4: 'Thursday', 5: 'Friday', 6: 'Saturday', 7: 'Sunday',
+  }[wd]!;
+
+  String _weekdayNameFr(int wd) => const {
+    1: 'lundi', 2: 'mardi', 3: 'mercredi',
+    4: 'jeudi', 5: 'vendredi', 6: 'samedi', 7: 'dimanche',
+  }[wd]!;
+
+  String _scheduleLabel(SunnahReminder r, String locale) {
     final t = _formatTime(r.time);
-    if (r.weekday != null) return 'كل ${_weekdayName(r.weekday!)} — $t';
-    return 'يومياً — $t';
+    if (locale == 'en') {
+      return r.weekday != null ? 'Every ${_weekdayNameEn(r.weekday!)} — $t' : 'Daily — $t';
+    } else if (locale == 'fr') {
+      return r.weekday != null ? 'Chaque ${_weekdayNameFr(r.weekday!)} — $t' : 'Chaque jour — $t';
+    }
+    return r.weekday != null ? 'كل ${_weekdayName(r.weekday!)} — $t' : 'يومياً — $t';
   }
 
   // Split reminders into categories
@@ -67,35 +94,42 @@ class _SunnahRemindersScreenState extends State<SunnahRemindersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('تنبيهات السنن', style: TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-        ),
-        body: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildInfoBanner(),
-                  const SizedBox(height: 20),
-                  _buildCategoryHeader('📅 أسبوعية', Icons.calendar_today_rounded),
-                  const SizedBox(height: 10),
-                  ..._buildCards(_weekly),
-                  const SizedBox(height: 20),
-                  _buildCategoryHeader('🌙 يومية', Icons.repeat_rounded),
-                  const SizedBox(height: 10),
-                  ..._buildCards(_daily),
-                  const SizedBox(height: 32),
-                ],
-              ),
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).languageCode;
+    final screenTitle = locale == 'en' ? 'Sunnah Reminders' : locale == 'fr' ? 'Rappels Sunnah' : 'تنبيهات السنن';
+    final weeklyLabel = locale == 'en' ? '📅 Weekly' : locale == 'fr' ? '📅 Hebdomadaire' : '📅 أسبوعية';
+    final dailyLabel = locale == 'en' ? '🌙 Daily' : locale == 'fr' ? '🌙 Quotidien' : '🌙 يومية';
+    final bannerMsg = locale == 'en'
+        ? 'Enable the reminders you want and they\'ll arrive at the scheduled time automatically.'
+        : locale == 'fr'
+        ? 'Activez les rappels souhaités, ils arriveront automatiquement à l\'heure prévue.'
+        : 'فعّل التنبيهات التي تريدها وستصلك في الوقت المحدد تلقائياً.';
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(screenTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
       ),
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                _buildInfoBanner(bannerMsg),
+                const SizedBox(height: 20),
+                _buildCategoryHeader(weeklyLabel, Icons.calendar_today_rounded),
+                const SizedBox(height: 10),
+                ..._buildCards(_weekly, locale),
+                const SizedBox(height: 20),
+                _buildCategoryHeader(dailyLabel, Icons.repeat_rounded),
+                const SizedBox(height: 10),
+                ..._buildCards(_daily, locale),
+                const SizedBox(height: 32),
+              ],
+            ),
     );
   }
 
-  Widget _buildInfoBanner() {
+  Widget _buildInfoBanner(String message) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -109,7 +143,7 @@ class _SunnahRemindersScreenState extends State<SunnahRemindersScreen> {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              'فعّل التنبيهات التي تريدها وستصلك في الوقت المحدد تلقائياً.',
+              message,
               style: TextStyle(
                 color: AppTheme.primaryColor.withOpacity(0.85),
                 height: 1.5,
@@ -139,13 +173,14 @@ class _SunnahRemindersScreenState extends State<SunnahRemindersScreen> {
     );
   }
 
-  List<Widget> _buildCards(List<String> ids) {
+  List<Widget> _buildCards(List<String> ids, String locale) {
     return SunnahReminderService.reminders
         .where((r) => ids.contains(r.id))
         .map((r) => _ReminderCard(
               reminder: r,
               enabled: _states[r.id] ?? false,
-              scheduleLabel: _scheduleLabel(r),
+              scheduleLabel: _scheduleLabel(r, locale),
+              locale: locale,
               onToggle: (v) => _toggle(r, v),
             ))
         .toList();
@@ -157,12 +192,14 @@ class _ReminderCard extends StatelessWidget {
     required this.reminder,
     required this.enabled,
     required this.scheduleLabel,
+    required this.locale,
     required this.onToggle,
   });
 
   final SunnahReminder reminder;
   final bool enabled;
   final String scheduleLabel;
+  final String locale;
   final ValueChanged<bool> onToggle;
 
   @override
@@ -206,7 +243,7 @@ class _ReminderCard extends StatelessWidget {
           child: Icon(reminder.icon, color: reminder.color, size: 22),
         ),
         title: Text(
-          reminder.title,
+          reminder.getLocalizedTitle(locale),
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 15,
@@ -218,7 +255,7 @@ class _ReminderCard extends StatelessWidget {
           children: [
             const SizedBox(height: 4),
             Text(
-              reminder.description,
+              reminder.getLocalizedDescription(locale),
               style: TextStyle(
                 fontSize: 12,
                 height: 1.4,

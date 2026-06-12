@@ -7,6 +7,7 @@ import 'package:quran/quran.dart' as quran;
 import 'package:quran_app/core/quran_audio_storage.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/quran/quran_reader_screen.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class DownloadedAudioScreen extends StatefulWidget {
   const DownloadedAudioScreen({super.key});
@@ -66,26 +67,24 @@ class _DownloadedAudioScreenState extends State<DownloadedAudioScreen> {
   }
 
   Future<void> _delete(DownloadedSurahAudio audio) async {
+    final l10n = AppLocalizations.of(context)!;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: AlertDialog(
-          title: const Text('حذف الصوت؟'),
-          content: Text(
-            'سيتم حذف صوت سورة ${quran.getSurahNameArabic(audio.surah)} بصوت ${audio.reciter.shortName} من الجهاز.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('إلغاء'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('حذف'),
-            ),
-          ],
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteAudioTitle),
+        content: Text(
+          l10n.deleteAudioContent(quran.getSurahNameArabic(audio.surah), audio.reciter.shortName),
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l10n.delete),
+          ),
+        ],
       ),
     );
 
@@ -109,24 +108,23 @@ class _DownloadedAudioScreenState extends State<DownloadedAudioScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(
-          title: const Text(
-            'الصوتيات المحملة',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          actions: [
-            IconButton(
-              tooltip: 'تحديث',
-              onPressed: _loadDownloads,
-              icon: const Icon(Icons.refresh_rounded),
-            ),
-          ],
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: Text(
+          l10n.downloadedAudio,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        body: _isLoading
+        actions: [
+          IconButton(
+            tooltip: l10n.refresh,
+            onPressed: _loadDownloads,
+            icon: const Icon(Icons.refresh_rounded),
+          ),
+        ],
+      ),
+      body: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _downloads.isEmpty
             ? _buildEmptyState()
@@ -141,11 +139,11 @@ class _DownloadedAudioScreenState extends State<DownloadedAudioScreen> {
                   },
                 ),
               ),
-      ),
     );
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(28),
@@ -166,14 +164,14 @@ class _DownloadedAudioScreenState extends State<DownloadedAudioScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            const Text(
-              'لا توجد صوتيات محملة بعد',
+            Text(
+              l10n.noDownloadedAudioTitle,
               textAlign: TextAlign.center,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 8),
             Text(
-              'افتح أي سورة واضغط زر التحميل بجانب المشغل، وستظهر هنا للاستماع إليها دون إنترنت.',
+              l10n.noDownloadedAudioDesc,
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey[600], height: 1.5),
             ),
@@ -238,10 +236,13 @@ class _DownloadedAudioScreenState extends State<DownloadedAudioScreen> {
                 _delete(audio);
               }
             },
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'open', child: Text('فتح السورة')),
-              PopupMenuItem(value: 'delete', child: Text('حذف الصوت')),
-            ],
+            itemBuilder: (context) {
+              final l10n = AppLocalizations.of(context)!;
+              return [
+                PopupMenuItem(value: 'open', child: Text(l10n.openSurah)),
+                PopupMenuItem(value: 'delete', child: Text(l10n.deleteAudio)),
+              ];
+            },
           ),
         ],
       ),

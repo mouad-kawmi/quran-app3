@@ -17,6 +17,7 @@ import 'package:quran_app/features/prayer_times/prayer_times_screen.dart';
 import 'package:quran_app/features/qibla/qibla_screen.dart';
 import 'package:quran_app/features/quran/quran_reader_screen.dart';
 import 'package:quran_app/features/quran/surah_list_screen.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, this.onSelectMainTab});
@@ -54,8 +55,8 @@ class _CountdownSnapshot {
     return isAdhanElapsed ? elapsedSinceAdhan : remaining;
   }
 
-  String get displayLabel {
-    return isAdhanElapsed ? 'مضى على الأذان' : 'متبقي';
+  String displayLabel(AppLocalizations l10n) {
+    return isAdhanElapsed ? l10n.elapsedSinceAdhan : l10n.remainingForAdhan;
   }
 }
 
@@ -86,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _hijriDate = '';
   String _gregorianDate = '';
   DateTime? _dateLabelDay;
+  String _currentLanguageCode = 'ar';
   String? _locationError;
   String? _locationNotice;
   bool _isLoadingPrayerTimes = true;
@@ -95,6 +97,19 @@ class _HomeScreenState extends State<HomeScreen> {
   NotificationHealthStatus? _notificationHealth;
   bool _showAdhanSetupCard = false;
   bool _adhanSetupSheetVisible = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _currentLanguageCode = Localizations.localeOf(context).languageCode;
+    _updateDateLabels(DateTime.now());
+    if (_prayerLocation != null) {
+      _locationNotice = PrayerService.getLocalizedLocationNotice(
+        context,
+        _prayerLocation!,
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -128,13 +143,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final location = PrayerService.fallbackLocation;
     final schedule = PrayerService.getSchedule(location.coordinates, now: now);
 
-    _updateDateLabels(now);
     _prayerLocation = location;
     _prayerSchedule = schedule;
     _todayPrayerMoments = schedule.times == null
         ? const []
         : PrayerService.prayerMoments(schedule.times!);
-    _locationNotice = location.notice;
     _locationError = null;
     _isLoadingPrayerTimes = false;
     _updateCountdownSnapshot(now, schedule);
@@ -170,8 +183,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
       _applyPrayerLocation(location);
       unawaited(
-        PrayerNotificationService.schedulePrayerReminders(location.coordinates)
-            .whenComplete(() {
+        PrayerNotificationService.schedulePrayerReminders(
+          location.coordinates,
+        ).whenComplete(() {
           if (!mounted) return;
           unawaited(_refreshAdhanSetupStatus(showInitialPrompt: true));
         }),
@@ -180,7 +194,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted || requestSerial != _locationRequestSerial) return;
       setState(() {
         _isLoadingPrayerTimes = false;
-        _locationError = error.message;
+        // Use localized location error
+        _locationError = PrayerService.getLocalizedLocationError(
+          context,
+          error.message,
+        );
         _locationNotice = null;
       });
       _setCountdownLoading(false);
@@ -188,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted || requestSerial != _locationRequestSerial) return;
       setState(() {
         _isLoadingPrayerTimes = false;
-        _locationError = 'حدث خطأ أثناء قراءة الموقع. حاول مرة أخرى.';
+        _locationError = AppLocalizations.of(context)!.locationErrorHint;
         _locationNotice = null;
       });
       _setCountdownLoading(false);
@@ -205,7 +223,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _todayPrayerMoments = schedule.times == null
           ? const []
           : PrayerService.prayerMoments(schedule.times!);
-      _locationNotice = location.notice;
+      // Use localized location notice
+      _locationNotice = PrayerService.getLocalizedLocationNotice(
+        context,
+        location,
+      );
       _locationError = null;
       _isLoadingPrayerTimes = false;
       _updateDateLabels(now);
@@ -281,10 +303,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (khatma?.hasPlan == true && nextPage != null) {
       unawaited(
         _pushAndRefreshReading(
-          KhatmaPageScreen(
-            page: nextPage,
-            returnToKhatmaHomeOnBack: true,
-          ),
+          KhatmaPageScreen(page: nextPage, returnToKhatmaHomeOnBack: true),
         ),
       );
       return;
@@ -361,10 +380,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _updateDateLabels(DateTime now) {
     _dateLabelDay = DateTime(now.year, now.month, now.day);
-    _hijriDate = PrayerService.getHijriDate();
-    _gregorianDate = PrayerService.toWesternDigits(
-      DateFormat('EEEE، d MMMM yyyy', 'ar').format(now),
-    );
+    _hijriDate = PrayerService.getHijriDate(_currentLanguageCode);
+    
+    final locale = _currentLanguageCode;
+    String formatSpecifier;
+    if (locale == 'ar') {
+        formatSpecifier = 'EEEE، d MMMM yyyy';
+    } else if (locale == 'fr') {
+        formatSpecifier = 'EEEE d MMMM yyyy';
+    } else {
+        formatSpecifier = 'EEEE, d MMMM yyyy';
+    }
+    
+    String formatted = DateFormat(formatSpecifier, locale).format(now);
+    _gregorianDate = locale == 'ar' ? PrayerService.toWesternDigits(formatted) : formatted;
   }
 
   void _updateCountdownSnapshot(
@@ -373,10 +402,11 @@ class _HomeScreenState extends State<HomeScreen> {
     bool? isLoading,
   }) {
     final elapsedSinceAdhan = now.difference(schedule.previousPrayer.time);
-    final isAdhanElapsed = !elapsedSinceAdhan.isNegative &&
+    final isAdhanElapsed =
+        !elapsedSinceAdhan.isNegative &&
         elapsedSinceAdhan <= _adhanElapsedDisplayDuration;
-    final elapsedProgress = elapsedSinceAdhan.inSeconds /
-        _adhanElapsedDisplayDuration.inSeconds;
+    final elapsedProgress =
+        elapsedSinceAdhan.inSeconds / _adhanElapsedDisplayDuration.inSeconds;
 
     _countdown.value = _CountdownSnapshot(
       remaining: schedule.timeUntilNextPrayer(now),
@@ -432,8 +462,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final shouldShow =
         await PrayerNotificationService.shouldShowInitialAdhanSetupPrompt(
-      health,
-    );
+          health,
+        );
     if (!mounted || !shouldShow || _adhanSetupSheetVisible) {
       return;
     }
@@ -447,9 +477,8 @@ class _HomeScreenState extends State<HomeScreen> {
     await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => AdhanSettingsScreen(
-          startSetupGuide: startSetupGuide,
-        ),
+        builder: (context) =>
+            AdhanSettingsScreen(startSetupGuide: startSetupGuide),
       ),
     );
     if (!mounted) return;
@@ -491,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'إكمال تفعيل الأذان',
+                        AppLocalizations.of(context)!.adhanNeedsSetup,
                         style: TextStyle(
                           color: AppTheme.primaryTextColor(context),
                           fontWeight: FontWeight.bold,
@@ -503,7 +532,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'يحتاج الأذان تفعيل التنبيهات والوقت الدقيق واستثناء البطارية مرة واحدة حتى يعمل في وقته، ثم يعيد التطبيق برمجة الأذان تلقائيا.',
+                  AppLocalizations.of(context)!.adhanNeedsSetupDesc,
                   style: TextStyle(
                     color: AppTheme.mutedTextColor(context),
                     height: 1.6,
@@ -517,12 +546,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     unawaited(_openAdhanSettings(startSetupGuide: true));
                   },
                   icon: const Icon(Icons.check_circle_rounded),
-                  label: const Text('إعداد الأذان الآن'),
+                  label: Text(AppLocalizations.of(context)!.setupAdhanNow),
                 ),
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: () => Navigator.of(sheetContext).pop(),
-                  child: const Text('لاحقا'),
+                  child: Text(AppLocalizations.of(context)!.later),
                 ),
               ],
             ),
@@ -536,44 +565,43 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        body: SingleChildScrollView(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    _buildPrayerTimeCard(),
-                    if (_showAdhanSetupCard) ...[
-                      const SizedBox(height: 12),
-                      _buildAdhanSetupCard(),
-                    ],
-                    const SizedBox(height: 24),
-                    _buildAyahOfTheDay(),
-                    const SizedBox(height: 32),
-                    _buildSectionHeader('الخدمات الرئيسية'),
-                    const SizedBox(height: 16),
-                    _buildServicesGrid(context),
-                    const SizedBox(height: 32),
-                    _buildSectionHeader(
-                      'متابعة القراءة',
-                      action: 'القائمة كاملة',
-                      onActionTap: _openSurahList,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildReadingProgressCards(),
-                    const SizedBox(height: 32),
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
+                  _buildPrayerTimeCard(),
+                  if (_showAdhanSetupCard) ...[
+                    const SizedBox(height: 12),
+                    _buildAdhanSetupCard(),
                   ],
-                ),
+                  const SizedBox(height: 24),
+                  _buildAyahOfTheDay(),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader(
+                    AppLocalizations.of(context)!.mainServices,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildServicesGrid(context),
+                  const SizedBox(height: 32),
+                  _buildSectionHeader(
+                    AppLocalizations.of(context)!.continueReading,
+                    action: AppLocalizations.of(context)!.fullList,
+                    onActionTap: _openSurahList,
+                  ),
+                  const SizedBox(height: 16),
+                  _buildReadingProgressCards(),
+                  const SizedBox(height: 32),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -600,7 +628,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.5),
+                    color: Colors.white.withValues(alpha: 0.5),
                     width: 1.5,
                   ),
                 ),
@@ -614,18 +642,18 @@ class _HomeScreenState extends State<HomeScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'نور القرآن',
-                    style: TextStyle(
+                  Text(
+                    AppLocalizations.of(context)!.appTitle,
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    'رفيقك في تدبر الذكر الحكيم',
+                    AppLocalizations.of(context)!.appSubtitle,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
+                      color: Colors.white.withValues(alpha: 0.8),
                       fontSize: 14,
                     ),
                   ),
@@ -648,8 +676,8 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(
-              AppTheme.isDark(context) ? 0.18 : 0.05,
+            color: Colors.black.withValues(
+              alpha: AppTheme.isDark(context) ? 0.18 : 0.05,
             ),
             blurRadius: 20,
             offset: const Offset(0, 10),
@@ -702,15 +730,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ValueListenableBuilder<_CountdownSnapshot>(
               valueListenable: _countdown,
               builder: (context, countdown, _) {
+                final l10n = AppLocalizations.of(context)!;
                 final displayPrayer = countdown.isAdhanElapsed
                     ? schedule?.previousPrayer
                     : schedule?.nextPrayer;
                 final prayerTitle = countdown.isAdhanElapsed
-                    ? 'الأذان الحالي'
-                    : 'الصلاة القادمة';
+                    ? l10n.currentAdhan
+                    : l10n.nextPrayer;
                 final prayerName = displayPrayer == null
                     ? '--'
-                    : PrayerService.getPrayerName(displayPrayer.prayer);
+                    : PrayerService.getPrayerName(displayPrayer.prayer, l10n);
                 final prayerTime = displayPrayer == null
                     ? '--:--'
                     : DateFormat('HH:mm').format(displayPrayer.time);
@@ -724,7 +753,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           : PrayerService.formatDuration(
                               countdown.displayDuration,
                             ),
-                      countdown.displayLabel,
+                      countdown.displayLabel(l10n),
                       isLoading: countdown.isLoading,
                       progress: countdown.progress,
                     ),
@@ -802,7 +831,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'الأذان يحتاج إكمال الإعداد',
+                  AppLocalizations.of(context)!.adhanNeedsSetup,
                   style: TextStyle(
                     color: AppTheme.primaryTextColor(context),
                     fontWeight: FontWeight.bold,
@@ -814,7 +843,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 10),
           Text(
-            'فعّل التنبيهات والوقت الدقيق واستثناء البطارية مرة واحدة حتى لا ينتظر المستخدم الأذان وهو غير جاهز.',
+            AppLocalizations.of(context)!.adhanNeedsSetupDesc,
             style: TextStyle(
               color: AppTheme.mutedTextColor(context),
               height: 1.45,
@@ -826,23 +855,40 @@ class _HomeScreenState extends State<HomeScreen> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildAdhanSetupPill('التنبيهات', notificationsOk),
-              _buildAdhanSetupPill('الوقت الدقيق', exactOk),
-              _buildAdhanSetupPill('عدم الإزعاج', dndOk),
-              _buildAdhanSetupPill('البطارية', batteryOk),
-              _buildAdhanSetupPill('الموقع', locationOk),
-              _buildAdhanSetupPill('البرمجة', scheduleOk),
+              _buildAdhanSetupPill(
+                AppLocalizations.of(context)!.notifications,
+                notificationsOk,
+              ),
+              _buildAdhanSetupPill(
+                AppLocalizations.of(context)!.exactTime,
+                exactOk,
+              ),
+              _buildAdhanSetupPill(
+                AppLocalizations.of(context)!.doNotDisturb,
+                dndOk,
+              ),
+              _buildAdhanSetupPill(
+                AppLocalizations.of(context)!.battery,
+                batteryOk,
+              ),
+              _buildAdhanSetupPill(
+                AppLocalizations.of(context)!.location,
+                locationOk,
+              ),
+              _buildAdhanSetupPill(
+                AppLocalizations.of(context)!.scheduling,
+                scheduleOk,
+              ),
             ],
           ),
           const SizedBox(height: 14),
           Align(
             alignment: Alignment.centerLeft,
             child: FilledButton.icon(
-              onPressed: () => unawaited(
-                _openAdhanSettings(startSetupGuide: true),
-              ),
+              onPressed: () =>
+                  unawaited(_openAdhanSettings(startSetupGuide: true)),
               icon: const Icon(Icons.check_circle_rounded, size: 18),
-              label: const Text('إكمال الإعداد'),
+              label: Text(AppLocalizations.of(context)!.completeSetup),
             ),
           ),
         ],
@@ -882,6 +928,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildLocationBadge() {
     final location = _prayerLocation;
+    
+    String locationName;
+    if (_isLoadingPrayerTimes) {
+      locationName = AppLocalizations.of(context)!.detectingLocation;
+    } else if (location?.isFallback == true) {
+      locationName = AppLocalizations.of(context)!.fallbackCityName;
+    } else {
+      locationName = location?.name != null ? PrayerService.getLocalizedCityName(context, location!.name) : AppLocalizations.of(context)!.location;
+    }
+
     return InkWell(
       onTap: _isLoadingPrayerTimes ? null : _loadPrayerTimes,
       borderRadius: BorderRadius.circular(20),
@@ -905,9 +961,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 4),
             Flexible(
               child: Text(
-                _isLoadingPrayerTimes
-                    ? 'تحديد الموقع'
-                    : location?.name ?? 'الموقع',
+                locationName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -931,9 +985,11 @@ class _HomeScreenState extends State<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withOpacity(0.08),
+          color: AppTheme.primaryColor.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppTheme.primaryColor.withOpacity(0.12)),
+          border: Border.all(
+            color: AppTheme.primaryColor.withValues(alpha: 0.12),
+          ),
         ),
         child: Row(
           children: [
@@ -983,7 +1039,7 @@ class _HomeScreenState extends State<HomeScreen> {
         FilledButton.icon(
           onPressed: _loadPrayerTimes,
           icon: const Icon(Icons.refresh_rounded),
-          label: const Text('إعادة المحاولة'),
+          label: Text(AppLocalizations.of(context)!.retry),
         ),
       ],
     );
@@ -1051,7 +1107,7 @@ class _HomeScreenState extends State<HomeScreen> {
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppTheme.secondaryColor.withOpacity(0.18),
+                color: AppTheme.secondaryColor.withValues(alpha: 0.18),
                 blurRadius: 18,
                 spreadRadius: 2,
               ),
@@ -1064,7 +1120,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: CircularProgressIndicator(
             value: isLoading ? null : progress,
             strokeWidth: 7,
-            backgroundColor: Colors.white.withOpacity(0.12),
+            backgroundColor: Colors.white.withValues(alpha: 0.12),
             valueColor: const AlwaysStoppedAnimation<Color>(
               AppTheme.secondaryColor,
             ),
@@ -1088,7 +1144,7 @@ class _HomeScreenState extends State<HomeScreen> {
               label,
               style: TextStyle(
                 fontSize: 9,
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withValues(alpha: 0.55),
                 letterSpacing: 0.3,
               ),
             ),
@@ -1108,9 +1164,9 @@ class _HomeScreenState extends State<HomeScreen> {
         constraints: const BoxConstraints(maxWidth: 150),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.12),
+          color: Colors.white.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white.withOpacity(0.18)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -1126,8 +1182,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Flexible(
               child: Text(
                 _isLoadingPrayerTimes
-                    ? 'تحديد الموقع'
-                    : location?.name ?? 'الموقع',
+                    ? AppLocalizations.of(context)!.detectingLocation
+                    : location?.name ?? AppLocalizations.of(context)!.location,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
@@ -1153,7 +1209,7 @@ class _HomeScreenState extends State<HomeScreen> {
         borderRadius: BorderRadius.circular(25),
         border: Border(
           right: BorderSide(
-            color: AppTheme.primaryColor.withOpacity(0.5),
+            color: AppTheme.primaryColor.withValues(alpha: 0.5),
             width: 5,
           ),
         ),
@@ -1164,12 +1220,12 @@ class _HomeScreenState extends State<HomeScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: AppTheme.secondaryColor.withOpacity(0.15),
+              color: AppTheme.secondaryColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Text(
-              'آية اليوم',
-              style: TextStyle(
+            child: Text(
+              AppLocalizations.of(context)!.ayahOfTheDay,
+              style: const TextStyle(
                 color: AppTheme.secondaryColor,
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -1247,7 +1303,7 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Text(
           title,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
         ),
         if (action != null)
           InkWell(
@@ -1257,8 +1313,8 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               child: Text(
                 action,
-          style: const TextStyle(
-            color: AppTheme.primaryColor,
+                style: const TextStyle(
+                  color: AppTheme.primaryColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -1280,8 +1336,8 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         _buildServiceItem(
           Icons.schedule_rounded,
-          'مواقيت الصلاة',
-          'الفجر إلى العشاء',
+          AppLocalizations.of(context)!.prayerTimes,
+          AppLocalizations.of(context)!.prayerTimesDesc,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const PrayerTimesScreen()),
@@ -1289,14 +1345,14 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         _buildServiceItem(
           Icons.menu_book_rounded,
-          'القرآن الكريم',
-          'تلاوة وترجمة',
+          AppLocalizations.of(context)!.quran,
+          AppLocalizations.of(context)!.quranDesc,
           onTap: _openSurahList,
         ),
         _buildServiceItem(
           Icons.access_time_filled_rounded,
-          'الأذكار',
-          'تحصين المسلم',
+          AppLocalizations.of(context)!.adhkar,
+          AppLocalizations.of(context)!.adhkarDesc,
           onTap: () {
             final onSelectMainTab = widget.onSelectMainTab;
             if (onSelectMainTab != null) {
@@ -1312,8 +1368,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         _buildServiceItem(
           Icons.explore_rounded,
-          'القبلة',
-          'اتجاه مكة',
+          AppLocalizations.of(context)!.qibla,
+          AppLocalizations.of(context)!.qiblaDesc,
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const QiblaScreen()),
@@ -1321,8 +1377,8 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         _buildServiceItem(
           Icons.ads_click_rounded,
-          'الختمة',
-          'ختم القرآن',
+          AppLocalizations.of(context)!.khatma,
+          AppLocalizations.of(context)!.khatmaDesc,
           onTap: _openKhatmaProgress,
         ),
       ],
@@ -1345,7 +1401,9 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(AppTheme.isDark(context) ? 0.14 : 0.03),
+              color: Colors.black.withValues(
+                alpha: AppTheme.isDark(context) ? 0.14 : 0.03,
+              ),
               blurRadius: 10,
               offset: const Offset(0, 5),
             ),
@@ -1361,7 +1419,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, color: AppTheme.primaryColor, size: 30),
@@ -1390,7 +1448,9 @@ class _HomeScreenState extends State<HomeScreen> {
             if (isLock)
               Container(
                 decoration: BoxDecoration(
-                  color: AppTheme.elevatedSurfaceColor(context).withOpacity(0.65),
+                  color: AppTheme.elevatedSurfaceColor(
+                    context,
+                  ).withValues(alpha: 0.65),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: const Center(
@@ -1408,39 +1468,44 @@ class _HomeScreenState extends State<HomeScreen> {
     final hasKhatmaPlan = khatma?.hasPlan == true;
     final nextPage = khatma?.nextPage;
     final lastRead = _lastRead;
+    final l10n = AppLocalizations.of(context)!;
 
     return Column(
       children: [
         _buildProgressCard(
-          hasKhatmaPlan ? 'متابعة الختمة' : 'ابدأ الختمة',
+          hasKhatmaPlan ? l10n.continueKhatma : l10n.startKhatma,
           hasKhatmaPlan
               ? nextPage == null
-                    ? 'الختمة مكتملة'
-                    : 'اليوم ${khatma!.currentDay} • الصفحة $nextPage'
-              : 'اختر خطة الختمة',
+                    ? l10n.khatmaCompleted
+                    : l10n.khatmaDayAndPage(khatma!.currentDay, nextPage)
+              : l10n.chooseKhatmaPlan,
           Icons.layers_rounded,
           const Color(0xFF1B3D2F),
           subtitle: hasKhatmaPlan
-              ? '${khatma!.completedCount}/604 صفحة مقروءة'
-              : '15 أو 30 أو 60 يوم',
+              ? l10n.khatmaPagesRead(khatma!.completedCount)
+              : l10n.khatmaDaysOptions,
           type: 'khatmah',
           onTap: _openKhatma,
-          actionLabel: hasKhatmaPlan ? 'فتح الموضع' : 'اختيار خطة',
+          actionLabel: hasKhatmaPlan ? l10n.openPosition : l10n.choosePlan,
           actionIcon: hasKhatmaPlan
               ? Icons.open_in_new_rounded
               : Icons.flag_rounded,
         ),
         const SizedBox(height: 16),
         _buildProgressCard(
-          'آخر ما قرأت',
+          l10n.lastRead,
           lastRead == null
-              ? 'ابدأ القراءة'
-              : 'سورة ${quran.getSurahNameArabic(lastRead.surah)}',
+              ? l10n.startReading
+              : l10n.surahName(
+                  Localizations.localeOf(context).languageCode == 'ar'
+                      ? quran.getSurahNameArabic(lastRead.surah)
+                      : quran.getSurahName(lastRead.surah),
+                ),
           Icons.book_rounded,
           const Color(0xFF1B3D2F),
           subtitle: lastRead == null
-              ? 'اختر سورة من القائمة'
-              : 'توقفت عند الآية ${lastRead.ayah}',
+              ? l10n.chooseSurahFromList
+              : l10n.stoppedAtAyah(lastRead.ayah),
           type: 'last_read',
           onTap: _openLastRead,
         ),
@@ -1469,7 +1534,7 @@ class _HomeScreenState extends State<HomeScreen> {
           color: bg,
           borderRadius: BorderRadius.circular(25),
           gradient: LinearGradient(
-            colors: [bg, bg.withOpacity(0.9)],
+            colors: [bg, bg.withValues(alpha: 0.9)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -1483,7 +1548,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Text(
                     title,
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
                     ),
                   ),
@@ -1513,7 +1578,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: AppTheme.secondaryColor.withOpacity(0.8),
+                        color: AppTheme.secondaryColor.withValues(alpha: 0.8),
                         fontSize: 13,
                       ),
                     ),
@@ -1523,10 +1588,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                         ),
                       ),
                       child: Row(
@@ -1541,7 +1606,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           Text(
                             actionLabel,
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.white.withValues(alpha: 0.9),
                               fontSize: 11,
                             ),
                           ),
@@ -1556,7 +1621,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withOpacity(0.2)),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               ),
               child: Icon(
                 icon,
@@ -1571,5 +1636,4 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-
 }

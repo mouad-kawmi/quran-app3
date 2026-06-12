@@ -2,43 +2,42 @@ import 'package:flutter/material.dart';
 import 'package:quran/quran.dart' as quran;
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/quran/quran_reader_screen.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class QuranIndexScreen extends StatelessWidget {
   const QuranIndexScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: DefaultTabController(
-        length: 3,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text(
-              'فهرس القرآن',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'الأجزاء'),
-                Tab(text: 'الأحزاب'),
-                Tab(text: 'الصفحات'),
-              ],
-            ),
+    final l10n = AppLocalizations.of(context)!;
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            l10n.quranIndex,
+            style: const TextStyle(fontWeight: FontWeight.bold),
           ),
-          body: TabBarView(
-            children: [
-              _buildJuzList(context),
-              _buildHizbList(context),
-              _buildPageList(context),
+          bottom: TabBar(
+            tabs: [
+              Tab(text: l10n.juzTab),
+              Tab(text: l10n.hizbTab),
+              Tab(text: l10n.pagesTab),
             ],
           ),
+        ),
+        body: TabBarView(
+          children: [
+            _buildJuzList(context, l10n),
+            _buildHizbList(context, l10n),
+            _buildPageList(context, l10n),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildJuzList(BuildContext context) {
+  Widget _buildJuzList(BuildContext context, AppLocalizations l10n) {
     return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: quran.totalJuzCount,
@@ -53,9 +52,12 @@ class QuranIndexScreen extends StatelessWidget {
         return _buildIndexTile(
           context,
           icon: Icons.auto_stories_rounded,
-          title: 'الجزء $juz',
-          subtitle:
-              'يبدأ من سورة ${quran.getSurahNameArabic(startSurah)} • الآية $startAyah • الصفحة $page',
+          title: l10n.juzTitle(juz),
+          subtitle: l10n.juzStartsAt(
+            quran.getSurahNameArabic(startSurah),
+            startAyah,
+            page,
+          ),
           page: page,
           surah: startSurah,
           ayah: startAyah,
@@ -64,7 +66,7 @@ class QuranIndexScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHizbList(BuildContext context) {
+  Widget _buildHizbList(BuildContext context, AppLocalizations l10n) {
     return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: 60,
@@ -77,9 +79,8 @@ class QuranIndexScreen extends StatelessWidget {
         return _buildIndexTile(
           context,
           icon: Icons.layers_rounded,
-          title: 'الحزب $hizb',
-          subtitle:
-              'من الصفحة $page • سورة ${quran.getSurahNameArabic(position.surah)}',
+          title: l10n.hizbTitle(hizb),
+          subtitle: l10n.hizbFromPage(page, quran.getSurahNameArabic(position.surah)),
           page: page,
           surah: position.surah,
           ayah: position.ayah,
@@ -88,7 +89,7 @@ class QuranIndexScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPageList(BuildContext context) {
+  Widget _buildPageList(BuildContext context, AppLocalizations l10n) {
     return ListView.separated(
       padding: const EdgeInsets.all(20),
       itemCount: quran.totalPagesCount,
@@ -101,7 +102,7 @@ class QuranIndexScreen extends StatelessWidget {
         return _buildIndexTile(
           context,
           icon: Icons.article_rounded,
-          title: 'الصفحة $page',
+          title: l10n.pageTitle(page),
           subtitle: summary,
           page: page,
           surah: position.surah,
@@ -144,7 +145,7 @@ class QuranIndexScreen extends StatelessWidget {
               height: 44,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.08),
+                color: AppTheme.primaryColor.withValues(alpha: 0.08),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: AppTheme.primaryColor),
@@ -197,8 +198,7 @@ String _pageSummary(int page) {
   final lastSurah = last['surah'] as int;
 
   if (firstSurah == lastSurah) {
-    return 'سورة ${quran.getSurahNameArabic(firstSurah)}';
+    return quran.getSurahNameArabic(firstSurah);
   }
-
-  return 'من ${quran.getSurahNameArabic(firstSurah)} إلى ${quran.getSurahNameArabic(lastSurah)}';
+  return '${quran.getSurahNameArabic(firstSurah)} ← ${quran.getSurahNameArabic(lastSurah)}';
 }

@@ -4,6 +4,7 @@ import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/bukhari/bukhari_models.dart';
 import 'package:quran_app/features/bukhari/bukhari_search_delegate.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
 class BukhariHadithsScreen extends StatelessWidget {
@@ -16,10 +17,8 @@ class BukhariHadithsScreen extends StatelessWidget {
     final settings = AppSettingsScope.watch(context);
     final fontScale = settings.fontScale;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
+    return Scaffold(
+      appBar: AppBar(
           title: Text(
             book.nameArabic,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -31,7 +30,7 @@ class BukhariHadithsScreen extends StatelessWidget {
               onPressed: () {
                 showSearch(
                   context: context,
-                  delegate: BukhariSearchDelegate(),
+                  delegate: BukhariSearchDelegate(hintText: AppLocalizations.of(context)!.bukhariSearchHint),
                 );
               },
             ),
@@ -46,7 +45,6 @@ class BukhariHadithsScreen extends StatelessWidget {
             return _buildHadithCard(context, hadith, fontScale);
           },
         ),
-      ),
     );
   }
 
@@ -71,7 +69,7 @@ class BukhariHadithsScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    'حديث رقم ${hadith.hadithNumber}',
+                    AppLocalizations.of(context)!.hadithNumber(hadith.hadithNumber),
                     style: TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
@@ -85,7 +83,7 @@ class BukhariHadithsScreen extends StatelessWidget {
                   onPressed: () {
                     SharePlus.instance.share(ShareParams(
                         text:
-                            'صحيح البخاري\n${book.nameArabic}\n\n${hadith.text}\n\n(حديث رقم ${hadith.hadithNumber})'));
+                            '${AppLocalizations.of(context)!.sahihBukhari}\n${book.nameArabic}\n\n${hadith.text}\n\n(${AppLocalizations.of(context)!.hadithNumber(hadith.hadithNumber)})'));
                   },
                 ),
               ],

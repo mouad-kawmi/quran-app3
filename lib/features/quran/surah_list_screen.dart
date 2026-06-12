@@ -6,85 +6,86 @@ import 'package:quran_app/features/quran/quran_bookmarks_screen.dart';
 import 'package:quran_app/features/quran/quran_index_screen.dart';
 import 'package:quran_app/features/quran/quran_reader_screen.dart';
 import 'package:quran_app/features/quran/quran_search_screen.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class SurahListScreen extends StatelessWidget {
   const SurahListScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'سور القرآن الكريم',
-            style: TextStyle(fontWeight: FontWeight.bold),
+    final l10n = AppLocalizations.of(context)!;
+    final isAr = Localizations.localeOf(context).languageCode == 'ar';
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          l10n.quranSurahs,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          IconButton(
+            tooltip: l10n.downloadedAudioTooltip,
+            icon: const Icon(Icons.library_music_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const DownloadedAudioScreen(),
+                ),
+              );
+            },
           ),
-          actions: [
-            IconButton(
-              tooltip: 'الصوتيات المحملة',
-              icon: const Icon(Icons.library_music_rounded),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const DownloadedAudioScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              tooltip: 'الفهرس',
-              icon: const Icon(Icons.view_list_rounded),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QuranIndexScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              tooltip: 'العلامات',
-              icon: const Icon(Icons.bookmark_rounded),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QuranBookmarksScreen(),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              tooltip: 'البحث',
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const QuranSearchScreen(),
-                  ),
-                );
-              },
-            ),
-          ],
-        ),
-        body: ListView.separated(
-          padding: const EdgeInsets.all(20),
-          itemCount: 114,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final surahNumber = index + 1;
-            return _buildSurahCard(context, surahNumber);
-          },
-        ),
+          IconButton(
+            tooltip: l10n.indexTooltip,
+            icon: const Icon(Icons.view_list_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const QuranIndexScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: l10n.bookmarksTooltip,
+            icon: const Icon(Icons.bookmark_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const QuranBookmarksScreen(),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            tooltip: l10n.searchTooltip,
+            icon: const Icon(Icons.search),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const QuranSearchScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(20),
+        itemCount: 114,
+        separatorBuilder: (context, index) => const SizedBox(height: 12),
+        itemBuilder: (context, index) {
+          final surahNumber = index + 1;
+          return _buildSurahCard(context, surahNumber, l10n, isAr);
+        },
       ),
     );
   }
 
-  Widget _buildSurahCard(BuildContext context, int surahNumber) {
+  Widget _buildSurahCard(BuildContext context, int surahNumber, AppLocalizations l10n, bool isAr) {
     return InkWell(
       onTap: () {
         openQuranReader(context, surahNumber: surahNumber);
@@ -98,7 +99,7 @@ class SurahListScreen extends StatelessWidget {
           border: Border.all(color: AppTheme.softBorderColor(context)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(AppTheme.isDark(context) ? 0.14 : 0.02),
+              color: Colors.black.withValues(alpha: AppTheme.isDark(context) ? 0.14 : 0.02),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -111,10 +112,10 @@ class SurahListScreen extends StatelessWidget {
               height: 45,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.05),
+                color: AppTheme.primaryColor.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppTheme.primaryColor.withOpacity(0.2),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.2),
                 ),
               ),
               child: Text(
@@ -139,7 +140,7 @@ class SurahListScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${quran.getPlaceOfRevelation(surahNumber)} • ${quran.getVerseCount(surahNumber)} آية',
+                    '${quran.getPlaceOfRevelation(surahNumber)} • ${l10n.ayahCount(quran.getVerseCount(surahNumber))}',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppTheme.mutedTextColor(context),
@@ -148,14 +149,15 @@ class SurahListScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Text(
-              quran.getSurahName(surahNumber),
-              style: TextStyle(
-                fontSize: 14,
-                color: AppTheme.primaryColor.withOpacity(0.5),
-                fontWeight: FontWeight.w500,
+            if (!isAr)
+              Text(
+                quran.getSurahName(surahNumber),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.primaryColor.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
           ],
         ),
       ),

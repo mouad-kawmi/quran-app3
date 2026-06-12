@@ -7,6 +7,7 @@ import 'package:quran_app/core/prayer_notification_service.dart';
 import 'package:quran_app/core/quran_database.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/navigation/app_shell.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -62,11 +63,14 @@ class QuranApp extends StatelessWidget {
       animation: settings,
       builder: (context, _) {
         return MaterialApp(
-          title: 'نور القرآن',
+          title: 'Noor Al-Quran',
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: settings.themeMode,
+          locale: settings.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
           builder: (context, child) {
             final mediaQuery = MediaQuery.of(context);
             return AppSettingsScope(

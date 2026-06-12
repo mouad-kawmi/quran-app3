@@ -9,18 +9,21 @@ class AppSettingsController extends ChangeNotifier {
   static const String _quranNormalFontSizeKey = 'app_quran_normal_font';
   static const double minFontScale = 0.9;
   static const double maxFontScale = 1.28;
+  static const String _localeKey = 'app_locale';
 
   ThemeMode _themeMode = ThemeMode.light;
   double _fontScale = 1;
   bool _useQcfFont = true;
   bool _useTajweedColors = false;
   double _quranNormalFontSize = 24.0;
+  Locale _locale = const Locale('ar');
 
   ThemeMode get themeMode => _themeMode;
   double get fontScale => _fontScale;
   bool get useQcfFont => _useQcfFont;
   bool get useTajweedColors => _useTajweedColors;
   double get quranNormalFontSize => _quranNormalFontSize;
+  Locale get locale => _locale;
 
   String get themeLabel {
     return switch (_themeMode) {
@@ -45,6 +48,12 @@ class AppSettingsController extends ChangeNotifier {
     _useQcfFont = prefs.getBool(_useQcfFontKey) ?? true;
     _useTajweedColors = prefs.getBool(_useTajweedColorsKey) ?? false;
     _quranNormalFontSize = prefs.getDouble(_quranNormalFontSizeKey) ?? 24.0;
+    
+    final localeStr = prefs.getString(_localeKey);
+    if (localeStr != null) {
+      _locale = Locale(localeStr);
+    }
+    
     notifyListeners();
   }
 
@@ -55,6 +64,15 @@ class AppSettingsController extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_themeModeKey, mode.name);
+  }
+
+  Future<void> setLocale(Locale loc) async {
+    if (_locale == loc) return;
+    _locale = loc;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_localeKey, loc.languageCode);
   }
 
   Future<void> setFontScale(double scale) async {

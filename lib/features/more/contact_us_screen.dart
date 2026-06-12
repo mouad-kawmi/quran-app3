@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:quran_app/core/theme.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class ContactUsScreen extends StatefulWidget {
   const ContactUsScreen({super.key});
@@ -34,8 +35,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
 
     if (_formspreeUrl.contains('YOUR_FORM_ID_HERE')) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('الرجاء إعداد رابط Formspree في الكود أولاً (contact_us_screen.dart)'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.formspreeError),
           backgroundColor: Colors.red,
         ),
       );
@@ -65,8 +66,8 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('حدث خطأ أثناء الإرسال، تحقق من اتصالك بالإنترنت.'),
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.sendError),
             backgroundColor: Colors.red,
           ),
         );
@@ -79,18 +80,17 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
   @override
   Widget build(BuildContext context) {
     final dark = AppTheme.isDark(context);
+    final l10n = AppLocalizations.of(context)!;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'تواصل معنا',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          centerTitle: true,
-          elevation: 0,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          l10n.contactUsTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
+        elevation: 0,
+      ),
         body: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
@@ -102,17 +102,17 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                 color: AppTheme.primaryColor,
               ),
               const SizedBox(height: 16),
-              const Text(
-                'هل لديك اقتراح أو واجهتك مشكلة؟',
+              Text(
+                l10n.contactUsSubtitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
               Text(
-                'نسعد باستقبال ملاحظاتك لتطوير التطبيق وتقديم تجربة أفضل.',
+                l10n.contactUsFeedbackDesc,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 15,
@@ -130,14 +130,14 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: Colors.green.withOpacity(0.3)),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.check_circle_rounded, color: Colors.green, size: 40),
-                      SizedBox(height: 8),
+                      const Icon(Icons.check_circle_rounded, color: Colors.green, size: 40),
+                      const SizedBox(height: 8),
                       Text(
-                        'تم الإرسال بنجاح!\nشكراً لك على تواصلك معنا.',
+                        l10n.sendSuccess,
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
@@ -148,15 +148,15 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'نوع الرسالة (اقتراح / تبليغ عن خطأ)',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        l10n.messageType,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _subjectController,
                         decoration: InputDecoration(
-                          hintText: 'مثال: مشكلة في تلاوة سورة الكهف...',
+                          hintText: l10n.subjectHint,
                           filled: true,
                           fillColor: dark ? AppTheme.darkElevatedSurfaceColor : Colors.white,
                           border: OutlineInputBorder(
@@ -165,19 +165,19 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                           ),
                         ),
                         validator: (value) =>
-                            value == null || value.trim().isEmpty ? 'هذا الحقل مطلوب' : null,
+                            value == null || value.trim().isEmpty ? l10n.requiredField : null,
                       ),
                       const SizedBox(height: 20),
-                      const Text(
-                        'نص الرسالة',
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                      Text(
+                        l10n.messageText,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 8),
                       TextFormField(
                         controller: _messageController,
                         maxLines: 5,
                         decoration: InputDecoration(
-                          hintText: 'اكتب تفاصيل الرسالة هنا...',
+                          hintText: l10n.messageHint,
                           filled: true,
                           fillColor: dark ? AppTheme.darkElevatedSurfaceColor : Colors.white,
                           border: OutlineInputBorder(
@@ -186,7 +186,7 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                           ),
                         ),
                         validator: (value) =>
-                            value == null || value.trim().isEmpty ? 'هذا الحقل مطلوب' : null,
+                            value == null || value.trim().isEmpty ? l10n.requiredField : null,
                       ),
                       const SizedBox(height: 32),
                       SizedBox(
@@ -210,9 +210,9 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                                     strokeWidth: 2.5,
                                   ),
                                 )
-                              : const Text(
-                                  'إرسال رسالة الآن',
-                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              : Text(
+                                  l10n.sendBtn,
+                                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                         ),
                       ),
@@ -222,7 +222,6 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 }

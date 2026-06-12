@@ -1,0 +1,431 @@
+{
+  "@@locale": "ar",
+  "appTitle": "نور القرآن",
+  "settings": "الإعدادات",
+  "language": "اللغة / Language",
+  "arabic": "العربية",
+  "english": "English",
+  "french": "Français",
+  "themeMode": "المظهر",
+  "lightTheme": "الوضع النهاري",
+  "darkTheme": "الوضع الليلي",
+  "systemTheme": "حسب الجهاز",
+  "more": "المزيد",
+  "home": "الرئيسية",
+  "quran": "القرآن",
+  "search": "البحث",
+  "adhkar": "الأذكار",
+  "adhkarDesc": "تحصين المسلم",
+  "quranDesc": "تلاوة وترجمة",
+  "detectingLocation": "تحديد الموقع",
+  "retry": "إعادة المحاولة",
+  "appSubtitle": "رفيقك في تدبر الذكر الحكيم",
+  "currentAdhan": "الأذان الحالي",
+  "nextPrayer": "الصلاة القادمة",
+  "elapsedSinceAdhan": "مضى على الأذان",
+  "remainingForAdhan": "متبقي",
+  "locationErrorHint": "حدث خطأ أثناء قراءة الموقع. حاول مرة أخرى.",
+  "adhanNeedsSetup": "الأذان يحتاج إكمال الإعداد",
+  "adhanNeedsSetupDesc": "فعّل التنبيهات والوقت الدقيق واستثناء البطارية مرة واحدة لتتمتع بتجربة أذان متكاملة و يشتغل التطبيق في الخلفية.",
+  "notifications": "التنبيهات",
+  "exactTime": "الوقت الدقيق",
+  "doNotDisturb": "عدم الإزعاج",
+  "battery": "البطارية",
+  "location": "الموقع",
+  "scheduling": "البرمجة",
+  "completeSetup": "إكمال الإعداد",
+  "mainServices": "الخدمات الرئيسية",
+  "continueReading": "متابعة القراءة",
+  "fullList": "القائمة كاملة",
+  "ayahOfTheDay": "آية اليوم",
+  "share": "شارك",
+  "khatmaProgress": "نسبة الإنجاز والورد اليومي",
+  "surahList": "الفهرس",
+  "allSurahs": "جميع سور القرآن",
+  "newKhatma": "ختمة جديدة",
+  "startOrganizedReading": "ابدأ قراءة منظمة",
+  "determineQibla": "تحديد اتجاه الصلاة",
+  "khatmaState": "{percent}٪ . الصفحة {page}",
+  "@khatmaState": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "setupAdhanNow": "إعداد الأذان الآن",
+  "later": "لاحقا",
+  "religiousTools": "الأدوات الدينية",
+  "continueKhatma": "متابعة الختمة",
+  "startKhatma": "ابدأ الختمة",
+  "khatmaCompleted": "الختمة مكتملة",
+  "khatmaDayAndPage": "اليوم {day} • الصفحة {page}",
+  "@khatmaDayAndPage": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "chooseKhatmaPlan": "اختر خطة الختمة",
+  "khatmaPagesRead": "{count}/604 صفحة مقروءة",
+  "@khatmaPagesRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "khatmaDaysOptions": "15 أو 30 أو 60 يوم",
+  "openPosition": "فتح الموضع",
+  "choosePlan": "اختيار خطة",
+  "lastRead": "آخر ما قرأت",
+  "startReading": "ابدأ القراءة",
+  "surahName": "سورة {name}",
+  "@surahName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseSurahFromList": "اختر سورة من القائمة",
+  "stoppedAtAyah": "توقفت عند الآية {ayah}",
+  "@stoppedAtAyah": {
+    "placeholders": {
+      "ayah": {
+        "type": "int"
+      }
+    }
+  },
+  "prayerTimes": "مواقيت الصلاة",
+  "prayerTimesDesc": "جميع أوقات اليوم من الفجر إلى العشاء",
+  "qibla": "القبلة",
+  "qiblaDesc": "تحديد اتجاه مكة المكرمة",
+  "khatma": "الختمة",
+  "khatmaDesc": "15 يوم، 30 يوم، أو 60 يوم مع تتبع الصفحات",
+  "downloadedAudio": "الصوتيات المحملة",
+  "downloadedAudioDesc": "السور المحملة للاستماع دون إنترنت",
+  "asmaUlHusna": "أسماء الله الحسنى",
+  "asmaUlHusnaDesc": "تصفح الأسماء التسعة والتسعين مع معانيها",
+  "sunnahReminders": "تنبيهات السنن",
+  "sunnahRemindersDesc": "تذكيرات بسورة الكهف والملك والأذكار والصيام",
+  "sahihBukhari": "صحيح البخاري",
+  "sahihBukhariDesc": "الأحاديث النبوية الشريفة",
+  "adhan": "الأذان",
+  "adhanDesc": "اختيار الصوت وتحديد الصلوات",
+  "tajweedRules": "أحكام التجويد الملونة",
+  "tajweedRulesDesc": "تعلم أحكام التجويد وإدارة الألوان",
+  "fontSize": "حجم الخط",
+  "currentSize": "الحجم الحالي: {size}",
+  "@currentSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseFontSize": "اختر حجما مناسبا للقرآن والأذكار وباقي النصوص.",
+  "small": "صغير",
+  "large": "كبير",
+  "medium": "متوسط",
+  "normal": "عادي",
+  "resetToNormalSize": "العودة للحجم العادي",
+  "aboutApp": "عن التطبيق",
+  "contactUs": "تواصل معنا",
+  "contactUsDesc": "أرسل رسالة للإبلاغ عن خطأ أو لاقتراح جديد",
+  "exactlyAboutApp": "حول التطبيق",
+  "version": "الإصدار {version}",
+  "@version": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "shareApp": "شارك التطبيق",
+  "shareAppDesc": "انشر الخير مع أصدقائك",
+  "shareAppMsg": "جرّب تطبيق نور القرآن للقرآن الكريم، مواقيت الصلاة، الأذكار والقبلة.",
+  "dhikrCount": "{count} ذكراً",
+  "@dhikrCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resetAll": "إعادة الكل",
+  "resetItem": "إعادة من الأول",
+  "tapToRepeat": "اضغط للإعادة",
+  "repetitions": "التكرار: {count}",
+  "@repetitions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "prayerTimesError": "تعذر جلب مواقيت الصلاة الآن. حاول مرة أخرى.",
+  "officialSource": "مصدر رسمي: {name}",
+  "@officialSource": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "officialSourceNote": "المواقيت مجلوبة من صفحة وزارة الأوقاف عند توفر الاتصال.",
+  "fallbackSourceNote": "تعذر الاتصال بموقع الوزارة، لذلك استعملنا الحساب المحلي مؤقتاً.",
+  "refresh": "تحديث",
+  "quranSurahs": "سور القرآن الكريم",
+  "downloadedAudioTooltip": "الصوتيات المحملة",
+  "indexTooltip": "الفهرس",
+  "bookmarksTooltip": "العلامات",
+  "searchTooltip": "البحث",
+  "ayahCount": "{count} آية",
+  "@ayahCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quranIndex": "فهرس القرآن",
+  "juzTab": "الأجزاء",
+  "hizbTab": "الأحزاب",
+  "pagesTab": "الصفحات",
+  "juzTitle": "الجزء {n}",
+  "@juzTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hizbTitle": "الحزب {n}",
+  "@hizbTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pageTitle": "الصفحة {n}",
+  "@pageTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "juzStartsAt": "يبدأ من سورة {surah} • الآية {ayah} • الصفحة {page}",
+  "@juzStartsAt": {
+    "placeholders": {
+      "surah": {
+        "type": "String"
+      },
+      "ayah": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "hizbFromPage": "من الصفحة {page} • سورة {surah}",
+  "@hizbFromPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "surah": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInQuran": "البحث في القرآن",
+  "searchHint": "اكتب كلمة للبحث...",
+  "results": "النتائج",
+  "resultCount": "{count} نتيجة",
+  "@resultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchEmptyTitle": "ابحث عن أي كلمة",
+  "searchEmptySubtitle": "البحث يعمل دون إنترنت ويشمل آيات القرآن كاملة.",
+  "searchNoResultsTitle": "عذراً، لم نجد نتائج",
+  "searchNoResultsSubtitle": "حاول بكلمة أخرى أو اكتبها دون تشكيل.",
+  "page": "ص {n}",
+  "@page": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "prayerFajr": "الفجر",
+  "prayerDhuhr": "الظهر",
+  "prayerAsr": "العصر",
+  "prayerMaghrib": "المغرب",
+  "prayerIsha": "العشاء",
+  "prayerSunrise": "الشروق",
+  "fallbackCityName": "الرباط",
+  "fallbackLocationNotice": "المواقيت محسوبة الآن على الرباط. فعّل خدمة الموقع واضغط على شارة الموقع لتحديد مدينتك.",
+  "storedLocationNotice": "المواقيت محسوبة على آخر موقع محفوظ. يعمل التطبيق دون خدمة الموقع ودون إنترنت.",
+  "unavailableLocationNotice": "المواقيت معتمدة على آخر موقع محفوظ لأن خدمة الموقع غير متاحة الآن. يعمل التطبيق دون إنترنت.",
+  "locationServiceDisabled": "فعّل خدمة الموقع لحساب المواقيت حسب مدينتك.",
+  "locationPermissionNeeded": "يحتاج التطبيق إلى إذن الموقع لعرض المواقيت الصحيحة.",
+  "locationPermissionDenied": "إذن الموقع مرفوض بشكل دائم. افتح إعدادات الهاتف وفعّل الإذن للتطبيق.",
+  "locationTimeoutError": "تعذر الحصول على الموقع الآن. فعّل خدمة الموقع وحاول مرة أخرى.",
+  "reciterMishari": "مشاري راشد العفاسي",
+  "reciterMishariShort": "العفاسي",
+  "reciterMinshawi": "محمد صديق المنشاوي",
+  "reciterMinshawiShort": "المنشاوي",
+  "reciterHusari": "محمود خليل الحصري",
+  "reciterHusariShort": "الحصري",
+  "reciterAbdulBasit": "عبد الباسط عبد الصمد",
+  "reciterAbdulBasitShort": "عبد الباسط",
+  "reciterAlHudhayfi": "علي الحذيفي",
+  "reciterAlHudhayfiShort": "الحذيفي",
+  "reciterMuhammadAyyub": "محمد أيوب",
+  "reciterMuhammadAyyubShort": "محمد أيوب",
+  "wordTranslation": "الترجمة (Saheeh International)",
+  "play": "تشغيل",
+  "interpretation": "التفسير",
+  "deleteAudioTitle": "حذف الصوت؟",
+  "deleteAudioContent": "سيتم حذف صوت سورة {surah} بصوت {reciter} من الجهاز.",
+  "@deleteAudioContent": {
+    "placeholders": {
+      "surah": {
+        "type": "String"
+      },
+      "reciter": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "إلغاء",
+  "delete": "حذف",
+  "noDownloadedAudioTitle": "لا توجد صوتيات محملة بعد",
+  "noDownloadedAudioDesc": "افتح أي سورة واضغط زر التحميل بجانب المشغل، وستظهر هنا للاستماع إليها دون إنترنت.",
+  "openSurah": "فتح السورة",
+  "deleteAudio": "حذف الصوت",
+  "asmaUlHusnaAyah": "وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَى فَادْعُوهُ بِهَا",
+  "asmaUlHusnaAyahRef": "— سورة الأعراف: 180",
+  "searchNameHint": "ابحث عن اسم...",
+  "meaningAndSignificance": "المعنى والدلالة",
+  "asmaUlHusnaDhikrTip": "يُستحب الإكثار من ذكر هذا الاسم في الدعاء والتسبيح لما فيه من معاني التقرب إلى الله تعالى.",
+  "bukhariDeleteTitle": "حذف صحيح البخاري",
+  "bukhariDeleteContent": "هل أنت متأكد أنك تريد حذف كتاب صحيح البخاري من جهازك؟ ستحتاج إلى إنترنت لتحميله مرة أخرى.",
+  "bukhariNoBooksError": "لم يتم العثور على أي كتب في قاعدة البيانات. تأكد من تحميل الملف.",
+  "bukhariDownloading": "جاري تحميل صحيح البخاري...",
+  "bukhariDownloadWait": "نرجو الانتظار، الحجم التقريبي 9 ميغابايت",
+  "bukhariDescription": "يحتوي على أكثر من 7000 حديث شريف.\nقم بتحميل الكتاب الآن لتصفح الأحاديث بدون إنترنت في أي وقت.",
+  "bukhariDownloadBtn": "تحميل الكتاب (9.4MB)",
+  "bukhariHadiths": "الأحاديث: {count}",
+  "@bukhariHadiths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hadithNumber": "حديث رقم {number}",
+  "@hadithNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "bukhariSearchHint": "ابحث برقم الحديث أو الكلمة...",
+  "bukhariSearchEmptyText": "اكتب رقم الحديث (مثال: 1) \nأو كلمة للبحث عنها",
+  "bukhariSearchNoResults": "لم يتم العثور على نتائج تطابق بحثك",
+  "unknownBook": "كتاب غير معروف",
+  "adhanCompleteSetup": "إكمال تفعيل الأذان",
+  "adhanCompleteSetupContent": "سيطلب التطبيق تفعيل التنبيهات والوقت الدقيق وتجاوز عدم الإزعاج واستثناء البطارية، ثم يعيد برمجة الأذان حتى يعمل في وقته.",
+  "adhanStartSetup": "ابدأ الإعداد",
+  "adhanSoundSet": "تم اعتماد صوت الأذان: {sound}",
+  "@adhanSoundSet": {
+    "placeholders": {
+      "sound": {
+        "type": "String"
+      }
+    }
+  },
+  "adhanSoundPickError": "تعذر اختيار الملف الصوتي. حاول مرة أخرى.",
+  "adhanStatusTitle": "حالة الأذان والتنبيهات",
+  "refreshStatus": "تحديث الحالة",
+  "adhanNotificationsPerm": "إذن التنبيهات",
+  "enabled": "مفعّل",
+  "adhanNotificationsPermDesc": "يلزم تفعيله لإظهار تنبيهات الأذان",
+  "adhanExactTimePerm": "التنبيه في الوقت الدقيق",
+  "adhanExactTimeOk": "مفعّل للوقت الدقيق",
+  "adhanExactTimePermDesc": "قد يتأخر الأذان إذا بقي غير مفعّل",
+  "adhanDndPerm": "تجاوز عدم الإزعاج",
+  "allowed": "مسموح",
+  "adhanDndPermDesc": "اختياري عند منع أصوات المنبهات",
+  "adhanBatteryPerm": "استثناء البطارية",
+  "adhanBatteryOk": "مستثنى من التوفير",
+  "adhanBatteryPermDesc": "يساعد على استمرار الأذان في الخلفية",
+  "adhanLocationPerm": "الموقع المحفوظ",
+  "found": "موجود",
+  "adhanLocationPermDesc": "افتح الرئيسية لتحديد المواقيت",
+  "adhanScheduled": "التنبيهات المبرمجة",
+  "adhanScheduledCount": "{count} تنبيه",
+  "@adhanScheduledCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adhanScheduledNotYet": "لم تتم برمجة التنبيهات بعد",
+  "adhanBgTip": "يعمل الأذان كمنبه في الخلفية. إذا كان وضع عدم الإزعاج يمنع أصوات المنبهات، فعّل إذن تجاوز عدم الإزعاج ثم أعد البرمجة.",
+  "enableNotifications": "تفعيل التنبيهات",
+  "enableExactAlarm": "تفعيل الوقت الدقيق",
+  "bypassDnd": "تجاوز عدم الإزعاج",
+  "setupBattery": "إعداد البطارية",
+  "rescheduleAdhan": "إعادة البرمجة",
+  "adhanRescheduleSuccess": "تم تحديث برمجة الأذان والتنبيهات.",
+  "adhanRescheduleNoLocation": "لا يوجد موقع محفوظ بعد. افتح الصفحة الرئيسية لتحديد مواقيت الصلاة.",
+  "adhanPolicySuccess": "بعد منح الإذن، اضغط إعادة البرمجة لتحديث تنبيهات الأذان.",
+  "adhanUploadSound": "إضافة أذان من الهاتف",
+  "adhanUploadSoundDesc": "اختر ملفا صوتيا ليستعمله التطبيق للأذان",
+  "adhanVolume": "حجم صوت الأذان",
+  "prayersLabel": "الصلوات",
+  "adhanPreviewError": "تعذر تشغيل معاينة الأذان.",
+  "contactUsTitle": "تواصل معنا",
+  "contactUsSubtitle": "هل لديك اقتراح أو واجهتك مشكلة؟",
+  "contactUsFeedbackDesc": "نسعد باستقبال ملاحظاتك لتطوير التطبيق وتقديم تجربة أفضل.",
+  "formspreeError": "الرجاء إعداد رابط Formspree في الكود أولاً",
+  "sendSuccess": "تم الإرسال بنجاح!\nشكراً لك على تواصلك معنا.",
+  "messageType": "نوع الرسالة (اقتراح / تبليغ عن خطأ)",
+  "subjectHint": "مثال: مشكلة في تلاوة سورة الكهف...",
+  "requiredField": "هذا الحقل مطلوب",
+  "messageText": "نص الرسالة",
+  "messageHint": "اكتب تفاصيل الرسالة هنا...",
+  "sendBtn": "إرسال رسالة الآن",
+  "sendError": "حدث خطأ أثناء الإرسال، تحقق من اتصالك بالإنترنت.",
+  "tajweedRulesTitle": "أحكام التجويد الملونة",
+  "allCategory": "الكل",
+  "enableTajweedMushaf": "تفعيل مصحف التجويد",
+  "enableTajweedMushafDesc": "إظهار الألوان لتسهيل الترتيل.",
+  "tajweedNoteColor": "ملاحظة: الألوان تظهر في \"الخط العادي\". قم بتعطيل الخط العثماني (QCF) من إعدادات القراءة.",
+  "searchTajweedHint": "ابحث عن حكم تجويدي...",
+  "noResultsFound": "لم يتم العثور على نتائج",
+  "adhanEnabled": "الأذان مفعّل",
+  "adhanDisabled": "الأذان غير مفعّل",
+  "stopPreview": "إيقاف المعاينة",
+  "listenAdhan": "استماع للأذان",
+  "adhanAttribution": "أصوات الأذان من Wikimedia Commons تحت رخصة CC BY-SA 4.0: Andrewler و Atcovi."
+}

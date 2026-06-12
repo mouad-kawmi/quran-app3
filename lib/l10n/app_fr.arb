@@ -1,0 +1,431 @@
+{
+  "@@locale": "fr",
+  "appTitle": "Noor Al-Quran",
+  "settings": "Paramètres",
+  "language": "Langue",
+  "arabic": "العربية",
+  "english": "English",
+  "french": "Français",
+  "themeMode": "Thème",
+  "lightTheme": "Mode Clair",
+  "darkTheme": "Mode Sombre",
+  "systemTheme": "Système",
+  "more": "Plus",
+  "home": "Accueil",
+  "quran": "Coran",
+  "search": "Recherche",
+  "adhkar": "Adhkar",
+  "adhkarDesc": "Citadelle du Musulman",
+  "quranDesc": "Récitation & Traduction",
+  "detectingLocation": "Détection en cours",
+  "retry": "Réessayer",
+  "appSubtitle": "Votre compagnon dans la méditation du Saint Coran",
+  "currentAdhan": "Adhan Actuel",
+  "nextPrayer": "Prochaine Prière",
+  "elapsedSinceAdhan": "Écoulé",
+  "remainingForAdhan": "Restant",
+  "locationErrorHint": "Une erreur est survenue avec la position. Réessayez.",
+  "adhanNeedsSetup": "Finalisez la Configuration",
+  "adhanNeedsSetupDesc": "Activez les notifications, l'heure exacte et l'optimisation de batterie une fois pour profiter de l'Adhan en arrière-plan.",
+  "notifications": "Notifications",
+  "exactTime": "Heure Exacte",
+  "doNotDisturb": "Ne Pas Déranger",
+  "battery": "Batterie",
+  "location": "Position",
+  "scheduling": "Programmation",
+  "completeSetup": "Compléter",
+  "mainServices": "Services Principaux",
+  "continueReading": "Continuer la lecture",
+  "fullList": "Liste Complète",
+  "ayahOfTheDay": "Verset du Jour",
+  "share": "Partager",
+  "khatmaProgress": "Progression & Plan du Jour",
+  "surahList": "Index",
+  "allSurahs": "Toutes les sourates du Coran",
+  "newKhatma": "Nouvelle Khatma",
+  "startOrganizedReading": "Commencer une lecture organisée",
+  "determineQibla": "Déterminer la direction de la prière",
+  "khatmaState": "{percent}% . Page {page}",
+  "@khatmaState": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "setupAdhanNow": "Configurer l'Adhan",
+  "later": "Plus tard",
+  "religiousTools": "Outils Religieux",
+  "continueKhatma": "Continuer la Khatma",
+  "startKhatma": "Démarrez la Khatma",
+  "khatmaCompleted": "Khatma terminée",
+  "khatmaDayAndPage": "Jour {day} • Page {page}",
+  "@khatmaDayAndPage": {
+    "placeholders": {
+      "day": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "chooseKhatmaPlan": "Choisir le plan de Khatma",
+  "khatmaPagesRead": "{count}/604 pages lues",
+  "@khatmaPagesRead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "khatmaDaysOptions": "15, 30 ou 60 jours",
+  "openPosition": "Ouvrir",
+  "choosePlan": "Choisir un plan",
+  "lastRead": "Dernière lecture",
+  "startReading": "Commencer à lire",
+  "surahName": "Sourate {name}",
+  "@surahName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseSurahFromList": "Choisissez une Sourate",
+  "stoppedAtAyah": "Arrêté au Verset {ayah}",
+  "@stoppedAtAyah": {
+    "placeholders": {
+      "ayah": {
+        "type": "int"
+      }
+    }
+  },
+  "prayerTimes": "Heures de Prière",
+  "prayerTimesDesc": "Toutes les heures de Fajr à Isha",
+  "qibla": "Qibla",
+  "qiblaDesc": "Déterminer la direction de la Mecque",
+  "khatma": "Khatma",
+  "khatmaDesc": "15, 30 ou 60 jours avec suivi des pages",
+  "downloadedAudio": "Audios Téléchargés",
+  "downloadedAudioDesc": "Sourates téléchargées (hors ligne)",
+  "asmaUlHusna": "Asma Ul Husna",
+  "asmaUlHusnaDesc": "Parcourez les 99 noms d'Allah",
+  "sunnahReminders": "Rappels de la Sunna",
+  "sunnahRemindersDesc": "Rappels pour Kahf, Mulk, Adhkar et Jeûne",
+  "sahihBukhari": "Sahih Al-Bukhari",
+  "sahihBukhariDesc": "Hadiths Prophétiques",
+  "adhan": "Adhan",
+  "adhanDesc": "Choisir le son et les prières",
+  "tajweedRules": "Règles de Tajwid Colorées",
+  "tajweedRulesDesc": "Apprendre le Tajwid et gérer les couleurs",
+  "fontSize": "Taille de Police",
+  "currentSize": "Taille actuelle : {size}",
+  "@currentSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "chooseFontSize": "Choisissez une taille pour le Coran et les textes.",
+  "small": "Petit",
+  "large": "Grand",
+  "medium": "Moyen",
+  "normal": "Normal",
+  "resetToNormalSize": "Réinitialiser la taille",
+  "aboutApp": "À Propos",
+  "contactUs": "Contactez-nous",
+  "contactUsDesc": "Signaler un bug ou faire une suggestion",
+  "exactlyAboutApp": "Détails",
+  "version": "Version {version}",
+  "@version": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "shareApp": "Partager l'application",
+  "shareAppDesc": "Partagez le bien avec vos amis",
+  "shareAppMsg": "Essayez l'application Noor Al-Quran pour le Saint Coran, les heures de prière, les adhkar et la Qibla.",
+  "dhikrCount": "{count} dhikr",
+  "@dhikrCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resetAll": "Réinitialiser tout",
+  "resetItem": "Réinitialiser",
+  "tapToRepeat": "Appuyer pour répéter",
+  "repetitions": "Répétitions : {count}",
+  "@repetitions": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "prayerTimesError": "Impossible de récupérer les horaires. Réessayez.",
+  "officialSource": "Source officielle : {name}",
+  "@officialSource": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "officialSourceNote": "Les horaires proviennent du Ministère des Awqaf lorsque la connexion est disponible.",
+  "fallbackSourceNote": "Connexion impossible avec le site du ministère, calcul local utilisé temporairement.",
+  "refresh": "Actualiser",
+  "quranSurahs": "Sourates du Coran",
+  "downloadedAudioTooltip": "Audio téléchargé",
+  "indexTooltip": "Index",
+  "bookmarksTooltip": "Signets",
+  "searchTooltip": "Recherche",
+  "ayahCount": "{count} versets",
+  "@ayahCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "quranIndex": "Index du Coran",
+  "juzTab": "Juz",
+  "hizbTab": "Hizb",
+  "pagesTab": "Pages",
+  "juzTitle": "Juz {n}",
+  "@juzTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "hizbTitle": "Hizb {n}",
+  "@hizbTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "pageTitle": "Page {n}",
+  "@pageTitle": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "juzStartsAt": "Débute à la Sourate {surah} • Verset {ayah} • Page {page}",
+  "@juzStartsAt": {
+    "placeholders": {
+      "surah": {
+        "type": "String"
+      },
+      "ayah": {
+        "type": "int"
+      },
+      "page": {
+        "type": "int"
+      }
+    }
+  },
+  "hizbFromPage": "De la page {page} • Sourate {surah}",
+  "@hizbFromPage": {
+    "placeholders": {
+      "page": {
+        "type": "int"
+      },
+      "surah": {
+        "type": "String"
+      }
+    }
+  },
+  "searchInQuran": "Rechercher dans le Coran",
+  "searchHint": "Tapez un mot à rechercher...",
+  "results": "Résultats",
+  "resultCount": "{count} résultat(s)",
+  "@resultCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "searchEmptyTitle": "Recherchez n'importe quel mot",
+  "searchEmptySubtitle": "La recherche fonctionne hors ligne et couvre tous les versets.",
+  "searchNoResultsTitle": "Aucun résultat trouvé",
+  "searchNoResultsSubtitle": "Essayez un autre mot ou enlevez les diacritiques.",
+  "page": "p.{n}",
+  "@page": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "prayerFajr": "Fajr",
+  "prayerDhuhr": "Dhouhr",
+  "prayerAsr": "Asr",
+  "prayerMaghrib": "Maghrib",
+  "prayerIsha": "Isha",
+  "prayerSunrise": "Lever du soleil",
+  "fallbackCityName": "Rabat",
+  "fallbackLocationNotice": "Les horaires de prière sont calculés pour Rabat. Activez le service de localisation et appuyez sur l'icône de localisation pour définir votre ville.",
+  "storedLocationNotice": "Les horaires de prière sont calculés pour le dernier emplacement enregistré. L'application fonctionne sans service de localisation ni Internet.",
+  "unavailableLocationNotice": "Les horaires de prière sont basés sur le dernier emplacement enregistré car le service de localisation n'est pas disponible maintenant. L'application fonctionne sans Internet.",
+  "locationServiceDisabled": "Activez le service de localisation pour calculer les horaires de prière pour votre ville.",
+  "locationPermissionNeeded": "L'application a besoin de la permission de localisation pour afficher les horaires de prière corrects.",
+  "locationPermissionDenied": "La permission de localisation est définitivement refusée. Ouvrez les paramètres du téléphone et activez la permission pour cette application.",
+  "locationTimeoutError": "Impossible d'obtenir la localisation maintenant. Activez le service de localisation et réessayez.",
+  "reciterMishari": "Mishary Rashid Al-Afasy",
+  "reciterMishariShort": "Al-Afasy",
+  "reciterMinshawi": "Muhammad Siddiq Al-Minshawi",
+  "reciterMinshawiShort": "Al-Minshawi",
+  "reciterHusari": "Mahmoud Khalil Al-Hussary",
+  "reciterHusariShort": "Al-Hussary",
+  "reciterAbdulBasit": "Abdul Basit Abdul Samad",
+  "reciterAbdulBasitShort": "Abdul Basit",
+  "reciterAlHudhayfi": "Ali Al-Hudhayfi",
+  "reciterAlHudhayfiShort": "Al-Hudhayfi",
+  "reciterMuhammadAyyub": "Muhammad Ayyub",
+  "reciterMuhammadAyyubShort": "Muhammad Ayyub",
+  "wordTranslation": "Traduction (Saheeh International)",
+  "play": "Lecture",
+  "interpretation": "Interprétation",
+  "deleteAudioTitle": "Supprimer l'audio ?",
+  "deleteAudioContent": "L'audio de la sourate {surah} par {reciter} sera supprimé de l'appareil.",
+  "@deleteAudioContent": {
+    "placeholders": {
+      "surah": {
+        "type": "String"
+      },
+      "reciter": {
+        "type": "String"
+      }
+    }
+  },
+  "cancel": "Annuler",
+  "delete": "Supprimer",
+  "noDownloadedAudioTitle": "Aucun audio téléchargé",
+  "noDownloadedAudioDesc": "Ouvrez une sourate et appuyez sur le bouton de téléchargement à côté du lecteur, et il apparaîtra ici pour une écoute hors ligne.",
+  "openSurah": "Ouvrir la sourate",
+  "deleteAudio": "Supprimer l'audio",
+  "asmaUlHusnaAyah": "C'est à Allah qu'appartiennent les noms les plus beaux. Invoquez-Le par ces noms.",
+  "asmaUlHusnaAyahRef": "— Sourate Al-A'raf : 180",
+  "searchNameHint": "Rechercher un nom...",
+  "meaningAndSignificance": "Signification et implications",
+  "asmaUlHusnaDhikrTip": "Il est recommandé de mentionner fréquemment ce nom dans l'invocation et la glorification car il rapproche d'Allah.",
+  "bukhariDeleteTitle": "Supprimer Sahih Al-Bukhari",
+  "bukhariDeleteContent": "Voulez-vous vraiment supprimer Sahih Al-Bukhari ? Vous aurez besoin d'Internet pour le retélécharger.",
+  "bukhariNoBooksError": "Aucun livre trouvé. Veuillez vous assurer que le fichier est téléchargé.",
+  "bukhariDownloading": "Téléchargement de Sahih Al-Bukhari...",
+  "bukhariDownloadWait": "Veuillez patienter, la taille est d'environ 9 Mo",
+  "bukhariDescription": "Contient plus de 7000 hadiths.\nTéléchargez le livre pour les consulter hors ligne.",
+  "bukhariDownloadBtn": "Télécharger le livre (9.4 Mo)",
+  "bukhariHadiths": "Hadiths : {count}",
+  "@bukhariHadiths": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hadithNumber": "Hadith No. {number}",
+  "@hadithNumber": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "bukhariSearchHint": "Rechercher par numéro ou par mot...",
+  "bukhariSearchEmptyText": "Tapez un numéro de hadith (ex. 1)\nou un mot à rechercher",
+  "bukhariSearchNoResults": "Aucun résultat trouvé pour votre recherche",
+  "unknownBook": "Livre Inconnu",
+  "adhanCompleteSetup": "Terminer la configuration de l'Adhan",
+  "adhanCompleteSetupContent": "L'application demandera des autorisations pour programmer l'Adhan.",
+  "adhanStartSetup": "Démarrer",
+  "adhanSoundSet": "Son d'Adhan défini : {sound}",
+  "@adhanSoundSet": {
+    "placeholders": {
+      "sound": {
+        "type": "String"
+      }
+    }
+  },
+  "adhanSoundPickError": "Impossible de choisir le fichier audio. Réessayez.",
+  "adhanStatusTitle": "Statut de l'Adhan et des Notifications",
+  "refreshStatus": "Actualiser le statut",
+  "adhanNotificationsPerm": "Permission de Notifications",
+  "enabled": "Activé",
+  "adhanNotificationsPermDesc": "Requis pour afficher les alertes d'Adhan",
+  "adhanExactTimePerm": "Alarmes à heure exacte",
+  "adhanExactTimeOk": "Activé pour l'heure exacte",
+  "adhanExactTimePermDesc": "L'Adhan peut être retardé s'il n'est pas activé",
+  "adhanDndPerm": "Ignorer Ne pas déranger",
+  "allowed": "Autorisé",
+  "adhanDndPermDesc": "Optionnel lorsque les alarmes sont en mode muet",
+  "adhanBatteryPerm": "Optimisation Batterie",
+  "adhanBatteryOk": "Exclu de l'économie d'énergie",
+  "adhanBatteryPermDesc": "Aide l'Adhan à s'exécuter en arrière-plan",
+  "adhanLocationPerm": "Position Enregistrée",
+  "found": "Trouvé",
+  "adhanLocationPermDesc": "Ouvrez l'Accueil pour définir les heures de prière",
+  "adhanScheduled": "Alertes programmées",
+  "adhanScheduledCount": "{count} alertes",
+  "@adhanScheduledCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adhanScheduledNotYet": "Les alertes ne sont pas encore programmées",
+  "adhanBgTip": "L'Adhan fonctionne comme une alarme en arrière-plan. Si le mode Ne pas déranger bloque les alarmes, activez le contournement.",
+  "enableNotifications": "Activer",
+  "enableExactAlarm": "Heure exact",
+  "bypassDnd": "Contourner NPD",
+  "setupBattery": "Batterie",
+  "rescheduleAdhan": "Reprogrammer",
+  "adhanRescheduleSuccess": "Les horaires de l'Adhan ont été mis à jour.",
+  "adhanRescheduleNoLocation": "Aucune position enregistrée. Ouvrez la page principale.",
+  "adhanPolicySuccess": "Permission accordée, cliquez sur Reprogrammer.",
+  "adhanUploadSound": "Ajouter un Adhan depuis le téléphone",
+  "adhanUploadSoundDesc": "Choisissez un fichier audio à utiliser pour l'Adhan",
+  "adhanVolume": "Volume de l'Adhan",
+  "prayersLabel": "Prières",
+  "adhanPreviewError": "Impossible de lire l'aperçu de l'Adhan.",
+  "contactUsTitle": "Nous contacter",
+  "contactUsSubtitle": "Vous avez une suggestion ou un problème ?",
+  "contactUsFeedbackDesc": "Nous sommes ravis de recevoir vos commentaires pour améliorer l'application.",
+  "formspreeError": "Veuillez d'abord configurer l'URL Formspree dans le code",
+  "sendSuccess": "Envoyé avec succès !\nMerci de nous avoir contactés.",
+  "messageType": "Type de message (Suggestion / Rapport de bug)",
+  "subjectHint": "ex: Problème avec la sourate Al-Kahf...",
+  "requiredField": "Ce champ est requis",
+  "messageText": "Contenu du message",
+  "messageHint": "Écrivez les détails de votre message ici...",
+  "sendBtn": "Envoyer le message maintenant",
+  "sendError": "Erreur d'envoi. Vérifiez votre connexion Internet.",
+  "tajweedRulesTitle": "Règles de Tajweed colorées",
+  "allCategory": "Tout",
+  "enableTajweedMushaf": "Activer le Mushaf de Tajweed",
+  "enableTajweedMushafDesc": "Afficher les couleurs pour faciliter la récitation.",
+  "tajweedNoteColor": "Remarque : Les couleurs apparaissent dans la 'Police normale'. Désactivez la police Uthmani (QCF).",
+  "searchTajweedHint": "Rechercher une règle...",
+  "noResultsFound": "Aucun résultat trouvé",
+  "adhanEnabled": "Adhan activé",
+  "adhanDisabled": "Adhan désactivé",
+  "stopPreview": "Arrêter l'aperçu",
+  "listenAdhan": "Écouter l'Adhan",
+  "adhanAttribution": "Sons d'Adhan de Wikimedia Commons sous licence CC BY-SA 4.0 : Andrewler et Atcovi."
+}

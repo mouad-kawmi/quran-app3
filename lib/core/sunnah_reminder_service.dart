@@ -29,6 +29,60 @@ class SunnahReminder {
     required this.iconName,
     this.weekday,
   });
+
+  String getLocalizedTitle(String locale) {
+    if (locale == 'ar') return title;
+    const en = {
+      'kahf_friday': '📖 Surah Al-Kahf',
+      'mulk_night': '🌙 Surah Al-Mulk',
+      'morning_adhkar': '🌅 Morning Adhkar',
+      'evening_adhkar': '🌆 Evening Adhkar',
+      'salah_nabi_friday': '💚 Salah upon the Prophet ﷺ',
+      'fast_monday': '🤍 Monday Fast',
+      'fast_thursday': '🤍 Thursday Fast',
+      'sleep_adhkar': '😴 Sleep Adhkar',
+      'quran_daily': '📚 Daily Quran Recitation',
+    };
+    const fr = {
+      'kahf_friday': '📖 Sourate Al-Kahf',
+      'mulk_night': '🌙 Sourate Al-Mulk',
+      'morning_adhkar': '🌅 Adhkar du Matin',
+      'evening_adhkar': '🌆 Adhkar du Soir',
+      'salah_nabi_friday': '💚 Salat sur le Prophète ﷺ',
+      'fast_monday': '🤍 Jeûne du Lundi',
+      'fast_thursday': '🤍 Jeûne du Jeudi',
+      'sleep_adhkar': '😴 Adhkar du Sommeil',
+      'quran_daily': '📚 Récitation Quotidienne',
+    };
+    return (locale == 'fr' ? fr[id] : en[id]) ?? title;
+  }
+
+  String getLocalizedDescription(String locale) {
+    if (locale == 'ar') return description;
+    const en = {
+      'kahf_friday': 'Whoever recites Surah Al-Kahf on Friday, a light will shine for him between the two Fridays.',
+      'mulk_night': 'Jabir (RA) narrated: The Prophet ﷺ would not sleep until he had recited {Blessed is He in whose hand is dominion}.',
+      'morning_adhkar': 'Morning adhkar are a shield and fortress for the Muslim throughout their day.',
+      'evening_adhkar': 'Evening adhkar protect the Muslim through the night and renew their connection with Allah.',
+      'salah_nabi_friday': 'The Prophet ﷺ said: Increase your prayers upon me on Friday and Friday night.',
+      'fast_monday': 'The Prophet ﷺ said: That is the day I was born and the day revelation came to me, so I love to fast on it.',
+      'fast_thursday': 'The Prophet ﷺ said: Deeds are presented on Monday and Thursday, and I love for my deeds to be presented while I am fasting.',
+      'sleep_adhkar': 'Sleep adhkar protect the sleeping person and make their sleep an act of worship.',
+      'quran_daily': 'The Prophet ﷺ said: Recite the Quran, for it will come on the Day of Resurrection as an intercessor for its companions.',
+    };
+    const fr = {
+      'kahf_friday': 'Quiconque récite la Sourate Al-Kahf le vendredi, une lumière brillera pour lui entre les deux vendredis.',
+      'mulk_night': 'Jabir (ra) rapporta : Le Prophète ﷺ ne dormait pas avant d\'avoir récité {Béni soit Celui en la main de qui est la royauté}.',
+      'morning_adhkar': 'Les adhkar du matin sont un bouclier et une forteresse pour le musulman tout au long de sa journée.',
+      'evening_adhkar': 'Les adhkar du soir protègent le musulman la nuit et renouvellent son lien avec Allah.',
+      'salah_nabi_friday': 'Le Prophète ﷺ a dit : Multipliez les prières sur moi le vendredi et la nuit du vendredi.',
+      'fast_monday': 'Le Prophète ﷺ a dit : C\'est le jour où je suis né et où la révélation m\'est venue, j\'aime donc y jeûner.',
+      'fast_thursday': 'Le Prophète ﷺ a dit : Les actes sont présentés le lundi et le jeudi, et j\'aime que mes actes soient présentés pendant que je jeûne.',
+      'sleep_adhkar': 'Les adhkar du sommeil protègent le dormeur et font de son sommeil un acte d\'adoration.',
+      'quran_daily': 'Le Prophète ﷺ a dit : Récitez le Coran, il viendra le Jour de la Résurrection comme intercesseur pour ses compagnons.',
+    };
+    return (locale == 'fr' ? fr[id] : en[id]) ?? description;
+  }
 }
 
 class SunnahReminderService {

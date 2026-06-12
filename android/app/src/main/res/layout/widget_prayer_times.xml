@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="@drawable/widget_card_background"
     android:baselineAligned="false"
     android:layoutDirection="rtl"
@@ -45,7 +45,7 @@
     </LinearLayout>
 
     <!-- ── Thin emerald divider ── -->
-    <View
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginTop="6dp"
@@ -55,15 +55,16 @@
     <!-- ── Next prayer section (compact) ── -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"
         android:background="@drawable/widget_next_panel_background"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingLeft="10dp"
-        android:paddingTop="6dp"
-        android:paddingRight="10dp"
-        android:paddingBottom="6dp">
+        android:paddingLeft="12dp"
+        android:paddingTop="12dp"
+        android:paddingRight="12dp"
+        android:paddingBottom="12dp">
 
         <!-- Prayer name (right / start in RTL) -->
         <LinearLayout
@@ -97,12 +98,12 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/widget_countdown_badge"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:paddingLeft="10dp"
-            android:paddingTop="5dp"
-            android:paddingRight="10dp"
-            android:paddingBottom="5dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingLeft="12dp"
+            android:paddingTop="6dp"
+            android:paddingRight="12dp"
+            android:paddingBottom="6dp">
 
             <TextView
                 android:id="@+id/widget_countdown_prefix"
@@ -110,7 +111,8 @@
                 android:layout_height="wrap_content"
                 android:text="متبقي"
                 android:textColor="#6F7672"
-                android:textSize="9sp" />
+                android:layout_marginEnd="6dp"
+                android:textSize="11sp" />
 
             <Chronometer
                 android:id="@+id/widget_countdown"
@@ -119,7 +121,7 @@
                 android:format="%s"
                 android:text="--:--"
                 android:textColor="#C5A059"
-                android:textSize="15sp"
+                android:textSize="14sp"
                 android:textStyle="bold" />
 
         </LinearLayout>

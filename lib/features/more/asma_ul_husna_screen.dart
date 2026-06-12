@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/more/asma_ul_husna_data.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class AsmaUlHusnaScreen extends StatefulWidget {
   const AsmaUlHusnaScreen({super.key});
@@ -38,12 +39,10 @@ class _AsmaUlHusnaScreenState extends State<AsmaUlHusnaScreen> {
     final dark = AppTheme.isDark(context);
     final filtered = _filtered;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            _buildAppBar(dark),
+    return Scaffold(
+      body: CustomScrollView(
+        slivers: [
+          _buildAppBar(dark),
             SliverPersistentHeader(
               pinned: true,
               delegate: _SearchDelegate(
@@ -67,7 +66,6 @@ class _AsmaUlHusnaScreenState extends State<AsmaUlHusnaScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -79,9 +77,9 @@ class _AsmaUlHusnaScreenState extends State<AsmaUlHusnaScreen> {
       backgroundColor: AppTheme.primaryColor,
       foregroundColor: Colors.white,
       flexibleSpace: FlexibleSpaceBar(
-        title: const Text(
-          'أسماء الله الحسنى',
-          style: TextStyle(
+        title: Text(
+          AppLocalizations.of(context)!.asmaUlHusna,
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             fontSize: 18,
@@ -137,7 +135,7 @@ class _AsmaUlHusnaScreenState extends State<AsmaUlHusnaScreen> {
                 children: [
                   const SizedBox(height: 16),
                   Text(
-                    'وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَى فَادْعُوهُ بِهَا',
+                    AppLocalizations.of(context)!.asmaUlHusnaAyah,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: const Color(0xFFCFB53B).withOpacity(0.9),
@@ -147,8 +145,7 @@ class _AsmaUlHusnaScreenState extends State<AsmaUlHusnaScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '\u2014 سورة الأعراف: 180',
-                    locale: const Locale('en'),
+                    AppLocalizations.of(context)!.asmaUlHusnaAyahRef,
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.6),
                       fontSize: 12,
@@ -171,7 +168,7 @@ class _AsmaUlHusnaScreenState extends State<AsmaUlHusnaScreen> {
         controller: _searchCtrl,
         onChanged: (v) => setState(() => _query = v),
         decoration: InputDecoration(
-          hintText: 'ابحث عن اسم...',
+          hintText: AppLocalizations.of(context)!.searchNameHint,
           prefixIcon: const Icon(Icons.search_rounded),
           suffixIcon: _query.isNotEmpty
               ? IconButton(
@@ -304,6 +301,7 @@ class _NameCard extends StatelessWidget {
   }
 
   void _showDetail(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -311,14 +309,12 @@ class _NameCard extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      builder: (ctx) => Directionality(
-        textDirection: TextDirection.rtl,
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.55,
-          minChildSize: 0.4,
-          maxChildSize: 0.9,
-          expand: false,
-          builder: (ctx, scroll) => SingleChildScrollView(
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.55,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, scroll) => SingleChildScrollView(
             controller: scroll,
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
             child: Column(
@@ -364,10 +360,12 @@ class _NameCard extends StatelessWidget {
 
                 // Description
                 Align(
-                  alignment: Alignment.centerRight,
+                  alignment: Directionality.of(context) == TextDirection.rtl
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Text(
-                    'المعنى والدلالة',
-                    style: TextStyle(
+                    l10n.meaningAndSignificance,
+                    style: const TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -411,8 +409,7 @@ class _NameCard extends StatelessWidget {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'يُستحب الإكثار من ذكر هذا الاسم في الدعاء والتسبيح '
-                          'لما فيه من معاني التقرب إلى الله تعالى.',
+                          l10n.asmaUlHusnaDhikrTip,
                           style: TextStyle(
                             color: AppTheme.isDark(context)
                                 ? Colors.white70
@@ -428,7 +425,6 @@ class _NameCard extends StatelessWidget {
               ],
             ),
           ),
-        ),
       ),
     );
   }

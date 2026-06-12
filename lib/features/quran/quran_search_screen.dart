@@ -6,6 +6,7 @@ import 'package:quran/quran.dart' as quran;
 import 'package:quran_app/core/quran_search_service.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/quran/quran_reader_screen.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class QuranSearchScreen extends StatefulWidget {
   const QuranSearchScreen({super.key});
@@ -94,64 +95,64 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-        appBar: AppBar(title: const Text('البحث في القرآن'), centerTitle: true),
-        body: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-              child: TextField(
-                controller: _searchController,
-                autofocus: true,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(
-                  hintText: 'اكتب كلمة للبحث...',
-                  prefixIcon: const Icon(Icons.search_rounded),
-                  suffixIcon: _searchController.text.isEmpty
-                      ? null
-                      : IconButton(
-                          onPressed: _searchController.clear,
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                  filled: true,
-                  fillColor: AppTheme.elevatedSurfaceColor(context),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(18),
-                    borderSide: BorderSide.none,
-                  ),
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      appBar: AppBar(title: Text(l10n.searchInQuran), centerTitle: true),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(
+                hintText: l10n.searchHint,
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        onPressed: _searchController.clear,
+                        icon: const Icon(Icons.close_rounded),
+                      ),
+                filled: true,
+                fillColor: AppTheme.elevatedSurfaceColor(context),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Text(
-                  _query.isEmpty ? 'النتائج' : '${_results.length} نتيجة',
-                  style: TextStyle(
-                    color: AppTheme.primaryTextColor(context),
-                    fontWeight: FontWeight.bold,
-                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Align(
+              alignment: Localizations.localeOf(context).languageCode == 'ar'
+                  ? Alignment.centerRight
+                  : Alignment.centerLeft,
+              child: Text(
+                _query.isEmpty ? l10n.results : l10n.resultCount(_results.length),
+                style: TextStyle(
+                  color: AppTheme.primaryTextColor(context),
+                  fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            Expanded(child: _buildResults()),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(child: _buildResults(l10n)),
+        ],
       ),
     );
   }
 
-  Widget _buildResults() {
+  Widget _buildResults(AppLocalizations l10n) {
     if (_query.isEmpty) {
       return _buildEmptyState(
         icon: Icons.search_rounded,
-        title: 'ابحث عن أي كلمة',
-        subtitle: 'البحث يعمل دون إنترنت ويشمل آيات القرآن كاملة.',
+        title: l10n.searchEmptyTitle,
+        subtitle: l10n.searchEmptySubtitle,
       );
     }
 
@@ -162,8 +163,8 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
     if (_results.isEmpty) {
       return _buildEmptyState(
         icon: Icons.manage_search_rounded,
-        title: 'عذراً، لم نجد نتائج',
-        subtitle: 'حاول بكلمة أخرى أو اكتبها دون تشكيل.',
+        title: l10n.searchNoResultsTitle,
+        subtitle: l10n.searchNoResultsSubtitle,
       );
     }
 
@@ -171,11 +172,11 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       itemCount: _results.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
-      itemBuilder: (context, index) => _buildResultCard(_results[index]),
+      itemBuilder: (context, index) => _buildResultCard(_results[index], l10n),
     );
   }
 
-  Widget _buildResultCard(QuranSearchResult result) {
+  Widget _buildResultCard(QuranSearchResult result, AppLocalizations l10n) {
     return InkWell(
       onTap: () => _openResult(result),
       borderRadius: BorderRadius.circular(18),
@@ -200,10 +201,7 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: AppTheme.primaryColor.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
@@ -219,7 +217,7 @@ class _QuranSearchScreenState extends State<QuranSearchScreen> {
                 ),
                 const Spacer(),
                 Text(
-                  'ص ${result.page}',
+                  l10n.page(result.page),
                   style: TextStyle(
                     color: AppTheme.mutedTextColor(context),
                     fontSize: 12,

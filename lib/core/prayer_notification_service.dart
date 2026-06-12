@@ -237,7 +237,7 @@ class PrayerNotificationService {
     Prayer.maghrib,
     Prayer.isha,
   ];
-  static const double defaultAdhanVolume = 0.85;
+  static const double defaultAdhanVolume = 0.40;
 
   static bool _notificationsInitialized = false;
   static bool _backgroundRefreshInitialized = false;
@@ -459,6 +459,8 @@ class PrayerNotificationService {
 
     await _initializeNotifications(requestPermissions: false);
     final pending = await _notifications.pendingNotificationRequests();
+    final nativePending = await _nativePendingScheduledCount();
+    final pendingNotificationCount = pending.length + nativePending;
     final hasStoredLocation = await _loadCoordinates() != null;
 
     if (!_isAndroid) {
@@ -468,7 +470,7 @@ class PrayerNotificationService {
         notificationPolicyAccessGranted: true,
         batteryOptimizationsIgnored: true,
         hasStoredLocation: hasStoredLocation,
-        pendingNotificationCount: pending.length,
+        pendingNotificationCount: pendingNotificationCount,
       );
     }
 
@@ -491,7 +493,7 @@ class PrayerNotificationService {
       notificationPolicyAccessGranted: notificationPolicyAccessGranted,
       batteryOptimizationsIgnored: batteryOptimizationsIgnored,
       hasStoredLocation: hasStoredLocation,
-      pendingNotificationCount: pending.length,
+      pendingNotificationCount: pendingNotificationCount,
     );
   }
 
@@ -669,16 +671,29 @@ class PrayerNotificationService {
         // تُجدول فقط إذا وقتها لم يمُر بعد
         final reminderTime = moment.time.subtract(reminderOffset);
         if (reminderTime.isAfter(now)) {
-          await _notifications.zonedSchedule(
-            id: _notificationId(reminderTime, moment.prayer),
-            title: 'تبقت 5 دقائق على الصلاة',
-            body:
-                'تبقت 5 دقائق على صلاة ${PrayerService.getPrayerName(moment.prayer)}',
-            scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
-            notificationDetails: reminderDetails,
-            androidScheduleMode: androidScheduleMode,
-            payload: moment.prayer.name,
+          final reminderId = _notificationId(reminderTime, moment.prayer);
+          final reminderTitle = 'تبقت 5 دقائق على الصلاة';
+          final reminderBody =
+              'تبقت 5 دقائق على صلاة ${PrayerService.getPrayerName(moment.prayer)}';
+          final scheduledNatively = await _scheduleNativeNotification(
+            id: reminderId,
+            time: reminderTime,
+            title: reminderTitle,
+            body: reminderBody,
+            timeoutAfter: reminderOffset,
           );
+
+          if (!scheduledNatively) {
+            await _notifications.zonedSchedule(
+              id: reminderId,
+              title: reminderTitle,
+              body: reminderBody,
+              scheduledDate: tz.TZDateTime.from(reminderTime, tz.local),
+              notificationDetails: reminderDetails,
+              androidScheduleMode: androidScheduleMode,
+              payload: moment.prayer.name,
+            );
+          }
         }
 
         // تخطى الصلاة إذا وقتها مر (لا داعي لجدولة notification الصلاة)
@@ -692,25 +707,17 @@ class PrayerNotificationService {
         final isAdhanEnabled = adhanSettings.isEnabledFor(moment.prayer);
         final adhanId = _adhanNotificationId(moment.time, moment.prayer);
         final prayerName = PrayerService.getPrayerName(moment.prayer);
+        final prayerTitle = 'حان وقت الصلاة';
+        final prayerBody = 'حان وقت صلاة $prayerName';
 
         final details = isAdhanEnabled
             ? await _adhanNotificationDetails(prayerTime: moment.time)
             : _prayerTimeNotificationDetails(moment.time);
 
-        // notification وقت الصلاة دائماً (سواء الأذان مفعّل أو لا)
-        await _notifications.zonedSchedule(
-          id: adhanId,
-          title: 'حان وقت الصلاة',
-          body: 'حان وقت صلاة $prayerName',
-          scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
-          notificationDetails: details,
-          androidScheduleMode: androidScheduleMode,
-          payload: 'adhan:${moment.prayer.name}',
-        );
-
         // الأذان native فقط إذا مفعّل
+        var visibleAlertScheduledNatively = false;
         if (isAdhanEnabled) {
-          await _scheduleNativeAdhan(
+          visibleAlertScheduledNatively = await _scheduleNativeAdhan(
             id: adhanId,
             time: moment.time,
             prayerName: prayerName,
@@ -718,7 +725,27 @@ class PrayerNotificationService {
             volume: adhanSettings.volume,
           );
         } else {
+          visibleAlertScheduledNatively = await _scheduleNativeNotification(
+            id: adhanId,
+            time: moment.time,
+            title: prayerTitle,
+            body: prayerBody,
+            timeoutAfter: _adhanElapsedVisibility,
+          );
           await _cancelNativeAdhan(adhanId);
+        }
+
+        // notification وقت الصلاة دائماً (سواء الأذان مفعّل أو لا)
+        if (!visibleAlertScheduledNatively) {
+          await _notifications.zonedSchedule(
+            id: adhanId,
+            title: prayerTitle,
+            body: prayerBody,
+            scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
+            notificationDetails: details,
+            androidScheduleMode: androidScheduleMode,
+            payload: 'adhan:${moment.prayer.name}',
+          );
         }
       }
     }
@@ -797,23 +824,16 @@ class PrayerNotificationService {
         final isAdhanEnabled = adhanSettings.isEnabledFor(moment.prayer);
         final adhanId = _adhanNotificationId(moment.time, moment.prayer);
         final prayerName = PrayerService.getPrayerName(moment.prayer);
+        final prayerTitle = 'حان وقت الصلاة';
+        final prayerBody = 'حان وقت صلاة $prayerName';
 
         final details = isAdhanEnabled
             ? await _adhanNotificationDetails(prayerTime: moment.time)
             : _prayerTimeNotificationDetails(moment.time);
 
-        await _notifications.zonedSchedule(
-          id: adhanId,
-          title: 'حان وقت الصلاة',
-          body: 'حان وقت صلاة $prayerName',
-          scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
-          notificationDetails: details,
-          androidScheduleMode: androidScheduleMode,
-          payload: 'adhan:${moment.prayer.name}',
-        );
-
+        var visibleAlertScheduledNatively = false;
         if (isAdhanEnabled) {
-          await _scheduleNativeAdhan(
+          visibleAlertScheduledNatively = await _scheduleNativeAdhan(
             id: adhanId,
             time: moment.time,
             prayerName: prayerName,
@@ -821,7 +841,26 @@ class PrayerNotificationService {
             volume: adhanSettings.volume,
           );
         } else {
+          visibleAlertScheduledNatively = await _scheduleNativeNotification(
+            id: adhanId,
+            time: moment.time,
+            title: prayerTitle,
+            body: prayerBody,
+            timeoutAfter: _adhanElapsedVisibility,
+          );
           await _cancelNativeAdhan(adhanId);
+        }
+
+        if (!visibleAlertScheduledNatively) {
+          await _notifications.zonedSchedule(
+            id: adhanId,
+            title: prayerTitle,
+            body: prayerBody,
+            scheduledDate: tz.TZDateTime.from(moment.time, tz.local),
+            notificationDetails: details,
+            androidScheduleMode: androidScheduleMode,
+            payload: 'adhan:${moment.prayer.name}',
+          );
         }
       }
     }
@@ -1025,7 +1064,9 @@ class PrayerNotificationService {
     for (var dayOffset = 0; dayOffset <= _daysToSchedule + 1; dayOffset++) {
       final date = startDate.add(Duration(days: dayOffset));
       for (final prayer in _notificationPrayers) {
-        await _notifications.cancel(id: _notificationId(date, prayer));
+        final reminderId = _notificationId(date, prayer);
+        await _notifications.cancel(id: reminderId);
+        await _cancelNativeNotification(reminderId);
       }
     }
   }
@@ -1049,6 +1090,7 @@ class PrayerNotificationService {
         final adhanId = _adhanNotificationId(date, prayer);
         await _notifications.cancel(id: adhanId);
         await _cancelNativeAdhan(adhanId);
+        await _cancelNativeNotification(adhanId);
       }
     }
   }
@@ -1113,7 +1155,7 @@ class PrayerNotificationService {
     return datePart * 100 + 50 + prayer.index;
   }
 
-  static Future<void> _scheduleNativeAdhan({
+  static Future<bool> _scheduleNativeAdhan({
     required int id,
     required DateTime time,
     required String prayerName,
@@ -1122,11 +1164,11 @@ class PrayerNotificationService {
   }) async {
     if (!_isAndroid ||
         (sound.rawResourceName == null && sound.filePath == null)) {
-      return;
+      return false;
     }
 
     try {
-      await _nativeAdhanChannel.invokeMethod<bool>('schedule', {
+      final scheduled = await _nativeAdhanChannel.invokeMethod<bool>('schedule', {
         'id': id,
         'triggerAtMillis': time.millisecondsSinceEpoch,
         'prayerName': prayerName,
@@ -1134,8 +1176,9 @@ class PrayerNotificationService {
         'filePath': sound.filePath,
         'volume': _sanitizeAdhanVolume(volume),
       });
+      return scheduled ?? false;
     } catch (_) {
-      // The visible notification still fires if native playback cannot schedule.
+      return false;
     }
   }
 
@@ -1148,6 +1191,63 @@ class PrayerNotificationService {
       await _nativeAdhanChannel.invokeMethod<bool>('cancel', {'id': id});
     } catch (_) {
       // No-op: cancelling the Flutter notification remains the source of truth.
+    }
+  }
+
+  static Future<bool> _scheduleNativeNotification({
+    required int id,
+    required DateTime time,
+    required String title,
+    required String body,
+    required Duration timeoutAfter,
+  }) async {
+    if (!_isAndroid) {
+      return false;
+    }
+
+    try {
+      final scheduled = await _nativeAdhanChannel.invokeMethod<bool>(
+        'scheduleNotification',
+        {
+          'id': id,
+          'triggerAtMillis': time.millisecondsSinceEpoch,
+          'title': title,
+          'body': body,
+          'timeoutAfterMillis': timeoutAfter.inMilliseconds,
+        },
+      );
+      return scheduled ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> _cancelNativeNotification(int id) async {
+    if (!_isAndroid) {
+      return;
+    }
+
+    try {
+      await _nativeAdhanChannel.invokeMethod<bool>('cancelNotification', {
+        'id': id,
+      });
+    } catch (_) {
+      // No-op: cancelling the Flutter notification remains the source of truth.
+    }
+  }
+
+  static Future<int> _nativePendingScheduledCount() async {
+    if (!_isAndroid) {
+      return 0;
+    }
+
+    try {
+      final count = await _nativeAdhanChannel.invokeMethod<int>(
+        'pendingScheduledCount',
+      );
+      return count ?? 0;
+    } catch (_) {
+      return 0;
     }
   }
 

@@ -7,16 +7,22 @@ import android.os.Build
 
 class AdhanAlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action != NativeAdhanScheduler.ACTION_PLAY_ADHAN) return
+        when (intent.action) {
+            NativeAdhanScheduler.ACTION_PLAY_ADHAN -> {
+                val serviceIntent = Intent(context, AdhanPlaybackService::class.java).apply {
+                    putExtras(intent)
+                }
 
-        val serviceIntent = Intent(context, AdhanPlaybackService::class.java).apply {
-            putExtras(intent)
-        }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(serviceIntent)
+                } else {
+                    context.startService(serviceIntent)
+                }
+            }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.startForegroundService(serviceIntent)
-        } else {
-            context.startService(serviceIntent)
+            NativeAdhanScheduler.ACTION_SHOW_NOTIFICATION -> {
+                NativeAdhanScheduler.showScheduledNotification(context, intent)
+            }
         }
     }
 }

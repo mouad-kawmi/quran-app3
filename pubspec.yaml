@@ -40,7 +40,7 @@ dependencies:
   quran: ^1.0.0
   adhan: ^2.0.0+1
   hijri: ^3.0.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   flutter_compass: ^0.8.1
   geolocator: ^12.0.0
   permission_handler: ^11.3.1
@@ -54,6 +54,8 @@ dependencies:
   flutter_timezone: ^5.0.2
   workmanager: ^0.9.0+3
   http: ^1.6.0
+  flutter_localizations:
+    sdk: flutter
 
 
 dev_dependencies:
@@ -84,6 +86,7 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  generate: true
   assets:
     - assets/branding/app_splash_icon.png
     - assets/branding/native_splash_logo.png

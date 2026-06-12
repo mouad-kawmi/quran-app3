@@ -44,7 +44,7 @@ class MainActivity : FlutterActivity() {
                             return@setMethodCallHandler
                         }
 
-                        NativeAdhanScheduler.schedule(
+                        val scheduled = NativeAdhanScheduler.schedule(
                             context = applicationContext,
                             id = id,
                             triggerAtMillis = triggerAtMillis,
@@ -53,7 +53,33 @@ class MainActivity : FlutterActivity() {
                             filePath = filePath.orEmpty(),
                             volume = volume,
                         )
-                        result.success(true)
+                        result.success(scheduled)
+                    }
+
+                    "scheduleNotification" -> {
+                        val id = call.argument<Int>("id")
+                        val triggerAtMillis = call.argument<Long>("triggerAtMillis")
+                        val title = call.argument<String>("title")
+                        val body = call.argument<String>("body")
+                        val timeoutAfterMillis = call.argument<Long>("timeoutAfterMillis")
+
+                        if (id == null ||
+                            triggerAtMillis == null ||
+                            title.isNullOrBlank()
+                        ) {
+                            result.error("bad_args", "Missing native notification alarm arguments.", null)
+                            return@setMethodCallHandler
+                        }
+
+                        val scheduled = NativeAdhanScheduler.scheduleNotification(
+                            context = applicationContext,
+                            id = id,
+                            triggerAtMillis = triggerAtMillis,
+                            title = title,
+                            body = body.orEmpty(),
+                            timeoutAfterMillis = timeoutAfterMillis ?: 0L,
+                        )
+                        result.success(scheduled)
                     }
 
                     "cancel" -> {
@@ -65,6 +91,21 @@ class MainActivity : FlutterActivity() {
 
                         NativeAdhanScheduler.cancel(applicationContext, id)
                         result.success(true)
+                    }
+
+                    "cancelNotification" -> {
+                        val id = call.argument<Int>("id")
+                        if (id == null) {
+                            result.error("bad_args", "Missing native notification alarm id.", null)
+                            return@setMethodCallHandler
+                        }
+
+                        NativeAdhanScheduler.cancelNotification(applicationContext, id)
+                        result.success(true)
+                    }
+
+                    "pendingScheduledCount" -> {
+                        result.success(NativeAdhanScheduler.pendingScheduledCount(applicationContext))
                     }
 
                     "pickAdhanAudio" -> pickAdhanAudio(result)

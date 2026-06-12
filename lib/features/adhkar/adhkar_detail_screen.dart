@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/adhkar/adhkar_data.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class AdhkarDetailScreen extends StatefulWidget {
   final AdhkarModel category;
@@ -13,38 +14,36 @@ class AdhkarDetailScreen extends StatefulWidget {
 class _AdhkarDetailScreenState extends State<AdhkarDetailScreen> {
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(widget.category.title),
-          actions: [
-            IconButton(
-              tooltip: 'إعادة الكل',
-              onPressed: _resetAll,
-              icon: const Icon(Icons.restart_alt_rounded),
-            ),
-          ],
-        ),
-        body: ListView.builder(
-          padding: const EdgeInsets.all(20),
-          itemCount: widget.category.items.length,
-          itemBuilder: (context, index) {
-            final item = widget.category.items[index];
-            return _buildDhikrCard(item);
-          },
-        ),
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.category.getLocalizedTitle(context)),
+        actions: [
+          IconButton(
+            tooltip: l10n.resetAll,
+            onPressed: _resetAll,
+            icon: const Icon(Icons.restart_alt_rounded),
+          ),
+        ],
+      ),
+      body: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        itemCount: widget.category.items.length,
+        itemBuilder: (context, index) {
+          final item = widget.category.items[index];
+          return _buildDhikrCard(item, l10n);
+        },
       ),
     );
   }
 
-  Widget _buildDhikrCard(DhikrItem item) {
+  Widget _buildDhikrCard(DhikrItem item, AppLocalizations l10n) {
     final bool isDone = item.currentCount >= item.count;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 20),
       color: isDone
-          ? Colors.green.withOpacity(AppTheme.isDark(context) ? 0.16 : 0.05)
+          ? Colors.green.withValues(alpha: AppTheme.isDark(context) ? 0.16 : 0.05)
           : AppTheme.elevatedSurfaceColor(context),
       child: InkWell(
         onTap: () => _advanceOrReset(item),
@@ -65,7 +64,7 @@ class _AdhkarDetailScreenState extends State<AdhkarDetailScreen> {
               const SizedBox(height: 16),
               if (item.reference != null)
                 Text(
-                  item.reference!,
+                  item.getLocalizedReference(context) ?? item.reference!,
                   style: TextStyle(
                     color: AppTheme.mutedTextColor(context),
                     fontSize: 12,
@@ -81,11 +80,11 @@ class _AdhkarDetailScreenState extends State<AdhkarDetailScreen> {
                       vertical: 8,
                     ),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withOpacity(0.1),
+                      color: AppTheme.primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      isDone ? 'اضغط للإعادة' : 'التكرار: ${item.count}',
+                      isDone ? l10n.tapToRepeat : l10n.repetitions(item.count),
                       style: const TextStyle(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.bold,
@@ -123,7 +122,7 @@ class _AdhkarDetailScreenState extends State<AdhkarDetailScreen> {
                 TextButton.icon(
                   onPressed: () => _resetItem(item),
                   icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('إعادة من الأول'),
+                  label: Text(l10n.resetItem),
                 ),
               ],
             ],

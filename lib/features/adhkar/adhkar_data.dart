@@ -1,8 +1,36 @@
+import 'package:flutter/widgets.dart';
+
 class AdhkarModel {
   final String title;
   final List<DhikrItem> items;
 
   AdhkarModel({required this.title, required this.items});
+
+  String getLocalizedTitle(BuildContext context) {
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'en') {
+      switch (title) {
+        case 'أذكار الصباح': return 'Morning Adhkar';
+        case 'أذكار المساء': return 'Evening Adhkar';
+        case 'أذكار بعد الصلاة': return 'Post-Prayer Adhkar';
+        case 'أذكار النوم': return 'Sleep Adhkar';
+        case 'أذكار الاستيقاظ': return 'Waking Up Adhkar';
+        case 'أذكار البيت والمسجد': return 'Home & Mosque Adhkar';
+        case 'أذكار شاملة': return 'General Adhkar';
+      }
+    } else if (locale == 'fr') {
+      switch (title) {
+        case 'أذكار الصباح': return 'Adhkar du Matin';
+        case 'أذكار المساء': return 'Adhkar du Soir';
+        case 'أذكار بعد الصلاة': return 'Adhkar après la Prière';
+        case 'أذكار النوم': return 'Adhkar du Sommeil';
+        case 'أذكار الاستيقاظ': return 'Adhkar du Réveil';
+        case 'أذكار البيت والمسجد': return 'Adhkar Maison & Mosquée';
+        case 'أذكار شاملة': return 'Adhkar Généraux';
+      }
+    }
+    return title;
+  }
 }
 
 class DhikrItem {
@@ -17,6 +45,25 @@ class DhikrItem {
     this.reference,
     this.currentCount = 0,
   });
+
+  String? getLocalizedReference(BuildContext context) {
+    if (reference == null) return null;
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'en') {
+      switch (reference) {
+        case 'رواه مسلم': return 'Narrated by Muslim';
+        case 'رواه الترمذي': return 'Narrated by At-Tirmidhi';
+        case 'سيد الاستغفار': return 'Chief of Istighfar';
+      }
+    } else if (locale == 'fr') {
+      switch (reference) {
+        case 'رواه مسلم': return 'Rapporté par Mouslim';
+        case 'رواه الترمذي': return 'Rapporté par At-Tirmidhi';
+        case 'سيد الاستغفار': return 'Le maître de l\'Istighfar';
+      }
+    }
+    return reference;
+  }
 }
 
 final List<AdhkarModel> adhkarData = [

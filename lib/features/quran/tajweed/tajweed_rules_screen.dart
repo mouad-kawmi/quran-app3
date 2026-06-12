@@ -3,6 +3,7 @@ import 'package:quran_app/core/app_settings.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/quran/tajweed/tajweed_data.dart';
 import 'package:quran_app/features/quran/tajweed/tajweed_rule_card.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class TajweedRulesScreen extends StatefulWidget {
   const TajweedRulesScreen({super.key});
@@ -14,7 +15,8 @@ class TajweedRulesScreen extends StatefulWidget {
 class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCategory = 'الكل';
+  late String _selectedCategory;
+  bool _categoriesInitialized = false;
 
   @override
   void dispose() {
@@ -23,7 +25,7 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
   }
 
   List<String> get _categories {
-    final cats = {'الكل'};
+    final cats = <String>{};
     for (var rule in TajweedData.rules) {
       cats.add(rule.category);
     }
@@ -33,31 +35,37 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
   @override
   Widget build(BuildContext context) {
     final settings = AppSettingsScope.watch(context);
+    final l10n = AppLocalizations.of(context)!;
+    final allLabel = l10n.allCategory;
+
+    // Init selectedCategory lazily
+    if (!_categoriesInitialized) {
+      _selectedCategory = allLabel;
+      _categoriesInitialized = true;
+    }
 
     // Filter rules
     final filteredRules = TajweedData.rules.where((rule) {
       final matchesSearch = _searchQuery.isEmpty ||
           rule.title.contains(_searchQuery) ||
           rule.shortDescription.contains(_searchQuery);
-      final matchesCategory = _selectedCategory == 'الكل' || rule.category == _selectedCategory;
+      final matchesCategory = _selectedCategory == allLabel || rule.category == _selectedCategory;
       return matchesSearch && matchesCategory;
     }).toList();
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('أحكام التجويد الملونة', style: TextStyle(fontWeight: FontWeight.bold)),
-          centerTitle: true,
-          elevation: 0,
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(l10n.tajweedRulesTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        elevation: 0,
+      ),
         body: Column(
           children: [
-            _buildHeader(settings),
-            _buildSearchAndFilter(),
+            _buildHeader(settings, l10n),
+            _buildSearchAndFilter(l10n, allLabel),
             Expanded(
               child: filteredRules.isEmpty
-                  ? _buildEmptyState()
+                  ? _buildEmptyState(l10n)
                   : ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       itemCount: filteredRules.length,
@@ -68,11 +76,10 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
-  Widget _buildHeader(AppSettingsController settings) {
+  Widget _buildHeader(AppSettingsController settings, AppLocalizations l10n) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -91,11 +98,11 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
         children: [
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text(
-              'تفعيل مصحف التجويد',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            title: Text(
+              l10n.enableTajweedMushaf,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            subtitle: const Text('إظهار الألوان لتسهيل الترتيل.'),
+            subtitle: Text(l10n.enableTajweedMushafDesc),
             value: settings.useTajweedColors,
             activeColor: AppTheme.primaryColor,
             onChanged: (value) async {
@@ -118,7 +125,7 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'ملاحظة: الألوان تظهر في "الخط العادي". قم بتعطيل الخط العثماني (QCF) من إعدادات القراءة.',
+                        l10n.tajweedNoteColor,
                         style: TextStyle(
                           color: Colors.orange[800],
                           fontSize: 13,
@@ -135,7 +142,7 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
     );
   }
 
-  Widget _buildSearchAndFilter() {
+  Widget _buildSearchAndFilter(AppLocalizations l10n, String allLabel) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Column(
@@ -144,7 +151,7 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
             controller: _searchController,
             onChanged: (value) => setState(() => _searchQuery = value),
             decoration: InputDecoration(
-              hintText: 'ابحث عن حكم تجويدي...',
+              hintText: l10n.searchTajweedHint,
               prefixIcon: const Icon(Icons.search_rounded),
               filled: true,
               fillColor: AppTheme.isDark(context) ? Colors.black12 : Colors.grey[100],
@@ -160,17 +167,19 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
             height: 36,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
+              itemCount: _categories.length + 1,
               itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = category == _selectedCategory;
+                // index 0 = "All" label, rest are categories
+                final category = index == 0 ? null : _categories[index - 1];
+                final label = index == 0 ? allLabel : category!;
+                final isSelected = _selectedCategory == label;
                 return Padding(
                   padding: const EdgeInsets.only(left: 8),
                   child: FilterChip(
-                    label: Text(category),
+                    label: Text(label),
                     selected: isSelected,
                     onSelected: (selected) {
-                      setState(() => _selectedCategory = category);
+                      setState(() => _selectedCategory = label);
                     },
                     selectedColor: AppTheme.primaryColor.withOpacity(0.2),
                     checkmarkColor: AppTheme.primaryColor,
@@ -188,7 +197,7 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(AppLocalizations l10n) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -196,7 +205,7 @@ class _TajweedRulesScreenState extends State<TajweedRulesScreen> {
           Icon(Icons.search_off_rounded, size: 64, color: Colors.grey[400]),
           const SizedBox(height: 16),
           Text(
-            'لم يتم العثور على نتائج',
+            l10n.noResultsFound,
             style: TextStyle(color: Colors.grey[600], fontSize: 16),
           ),
         ],

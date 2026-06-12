@@ -11,6 +11,7 @@ import 'package:quran_app/features/home/home_screen.dart';
 import 'package:quran_app/features/more/more_screen.dart';
 import 'package:quran_app/features/quran/quran_search_screen.dart';
 import 'package:quran_app/features/quran/surah_list_screen.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -102,21 +103,18 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: PopScope<Object?>(
-        canPop: false,
-        onPopInvokedWithResult: (didPop, result) {
-          if (didPop) return;
-          unawaited(_handleSystemBack());
-        },
-        child: Scaffold(
-          body: IndexedStack(
-            index: _currentIndex,
-            children: List<Widget>.generate(_tabCount, _buildTabNavigator),
-          ),
-          bottomNavigationBar: _buildBottomNav(context),
+    return PopScope<Object?>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        unawaited(_handleSystemBack());
+      },
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentIndex,
+          children: List<Widget>.generate(_tabCount, _buildTabNavigator),
         ),
+        bottomNavigationBar: _buildBottomNav(context),
       ),
     );
   }
@@ -170,26 +168,26 @@ class _AppShellState extends State<AppShell> {
         currentIndex: _currentIndex,
         backgroundColor: AppTheme.surfaceColor(context),
         elevation: 0,
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_filled),
-            label: 'الرئيسية',
+            icon: const Icon(Icons.home_filled),
+            label: AppLocalizations.of(context)!.home,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.menu_book_rounded),
-            label: 'القرآن',
+            icon: const Icon(Icons.menu_book_rounded),
+            label: AppLocalizations.of(context)!.quran,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.search_rounded),
-            label: 'البحث',
+            icon: const Icon(Icons.search_rounded),
+            label: AppLocalizations.of(context)!.search,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.access_time_rounded),
-            label: 'الأذكار',
+            icon: const Icon(Icons.access_time_rounded),
+            label: AppLocalizations.of(context)!.adhkar,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view_rounded),
-            label: 'المزيد',
+            icon: const Icon(Icons.grid_view_rounded),
+            label: AppLocalizations.of(context)!.more,
           ),
         ],
       ),

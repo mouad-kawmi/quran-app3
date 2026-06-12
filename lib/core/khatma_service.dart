@@ -97,13 +97,15 @@ class KhatmaService {
     return buildDays(totalDays).firstWhere((day) => day.containsPage(page));
   }
 
-  static String pagesPerDayLabel(int totalDays) {
+  static String pagesPerDayLabel(int totalDays, [String locale = 'ar']) {
     final counts = buildDays(totalDays).map((day) => day.pageCount).toSet();
     final sortedCounts = counts.toList()..sort();
-    if (sortedCounts.length == 1) {
-      return '${sortedCounts.first} صفحة في اليوم';
-    }
-    return '${sortedCounts.first}-${sortedCounts.last} صفحة في اليوم';
+    final range = sortedCounts.length == 1
+        ? '${sortedCounts.first}'
+        : '${sortedCounts.first}-${sortedCounts.last}';
+    if (locale == 'en') return '$range pages/day';
+    if (locale == 'fr') return '$range pages/jour';
+    return '$range صفحة في اليوم';
   }
 
   static Future<KhatmaProgress> loadProgress() async {

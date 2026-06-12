@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:adhan/adhan.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hijri/hijri_calendar.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class PrayerMoment {
@@ -21,6 +23,7 @@ class PrayerLocation {
     this.isFallback = false,
     this.isStored = false,
     this.notice,
+    this.noticeKey,
   });
 
   final Coordinates coordinates;
@@ -29,6 +32,7 @@ class PrayerLocation {
   final bool isFallback;
   final bool isStored;
   final String? notice;
+  final String? noticeKey; // For localization key mapping
 }
 
 class PrayerSchedule {
@@ -68,7 +72,7 @@ class PrayerLocationException implements Exception {
 }
 
 class PrayerService {
-  static const String fallbackCityName = 'الرباط';
+  // Constants for storage keys
   static const Duration quickLocationTimeout = Duration(seconds: 4);
   static const Duration preciseLocationTimeout = Duration(seconds: 8);
   static const String _storedLatitudeKey = 'last_prayer_location_latitude';
@@ -76,16 +80,22 @@ class PrayerService {
   static const String _storedNameKey = 'last_prayer_location_name';
   static const String _storedAccuracyKey = 'last_prayer_location_accuracy';
 
+  // Note: fallbackCityName will now use localization when accessed from UI
+  @Deprecated('Use l10n.fallbackCityName instead')
+  static const String fallbackCityName = 'الرباط';
+
   static Coordinates get fallbackCoordinates => Coordinates(34.0209, -6.8416);
 
-  static PrayerLocation get fallbackLocation => PrayerLocation(
-    coordinates: fallbackCoordinates,
-    name: fallbackCityName,
-    accuracy: 0,
-    isFallback: true,
-    notice:
-        'المواقيت محسوبة الآن على الرباط. فعّل خدمة الموقع واضغط على شارة الموقع لتحديد مدينتك.',
-  );
+  static PrayerLocation getFallbackLocation({String? cityName}) =>
+      PrayerLocation(
+        coordinates: fallbackCoordinates,
+        name: cityName ?? 'الرباط',
+        accuracy: 0,
+        isFallback: true,
+        noticeKey: 'fallback',
+      );
+
+  static PrayerLocation get fallbackLocation => getFallbackLocation();
 
   static Future<PrayerLocation> getBestAvailableLocation({
     Duration timeout = quickLocationTimeout,
@@ -231,7 +241,26 @@ class PrayerService {
     return PrayerTimes(coordinates, DateComponents.from(date), params);
   }
 
-  static String getPrayerName(Prayer prayer) {
+  static String getPrayerName(Prayer prayer, [AppLocalizations? l10n]) {
+    if (l10n != null) {
+      switch (prayer) {
+        case Prayer.fajr:
+          return l10n.prayerFajr;
+        case Prayer.dhuhr:
+          return l10n.prayerDhuhr;
+        case Prayer.asr:
+          return l10n.prayerAsr;
+        case Prayer.maghrib:
+          return l10n.prayerMaghrib;
+        case Prayer.isha:
+          return l10n.prayerIsha;
+        case Prayer.sunrise:
+          return l10n.prayerSunrise;
+        case Prayer.none:
+          return '--';
+      }
+    }
+    // Fallback to Arabic names
     switch (prayer) {
       case Prayer.fajr:
         return 'الفجر';
@@ -250,8 +279,77 @@ class PrayerService {
     }
   }
 
-  static String getHijriDate() {
+  static String getLocalizedLocationNotice(
+    BuildContext context,
+    PrayerLocation location,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
+    // Use noticeKey if available
+    if (location.noticeKey != null) {
+      switch (location.noticeKey) {
+        case 'fallback':
+          return l10n.fallbackLocationNotice;
+        case 'stored':
+          return l10n.storedLocationNotice;
+        case 'unavailable':
+          return l10n.unavailableLocationNotice;
+        default:
+          break;
+      }
+    }
+
+    // Fallback to detecting from notice string
+    if (location.notice?.contains('المواقيت محسوبة الآن على الرباط') ?? false) {
+      return l10n.fallbackLocationNotice;
+    } else if (location.notice?.contains(
+          'آخر موقع محفوظ. يعمل التطبيق دون خدمة الموقع ودون إنترنت',
+        ) ??
+        false) {
+      return l10n.storedLocationNotice;
+    } else if (location.notice?.contains(
+          'آخر موقع محفوظ لأن خدمة الموقع غير متاحة',
+        ) ??
+        false) {
+      return l10n.unavailableLocationNotice;
+    }
+
+    return location.notice ?? l10n.fallbackLocationNotice;
+  }
+
+  static String getLocalizedLocationError(
+    BuildContext context,
+    String? errorMessage,
+  ) {
+    final l10n = AppLocalizations.of(context)!;
+
+    if (errorMessage?.contains('فعّل خدمة الموقع') ?? false) {
+      return l10n.locationServiceDisabled;
+    } else if (errorMessage?.contains('إذن الموقع') ?? false) {
+      if (errorMessage?.contains('مرفوض بشكل دائم') ?? false) {
+        return l10n.locationPermissionDenied;
+      }
+      return l10n.locationPermissionNeeded;
+    } else if (errorMessage?.contains('تعذر الحصول على الموقع') ?? false) {
+      return l10n.locationTimeoutError;
+    }
+
+    return errorMessage ?? l10n.prayerTimesError;
+  }
+
+  static String getHijriDate([String locale = 'ar']) {
     final hDate = HijriCalendar.now();
+    
+    if (locale == 'fr') {
+      const frMonths = ['Mouharram', 'Safar', 'Rabiʻ I', 'Rabiʻ II', 'Joumada I', 'Joumada II', 'Rajab', 'Chaabane', 'Ramadan', 'Chaouwal', 'Dhou al-Qiʻdah', 'Dhou al-Hijjah'];
+      final monthName = hDate.hMonth >= 1 && hDate.hMonth <= 12 ? frMonths[hDate.hMonth - 1] : '';
+      return '${hDate.hDay} $monthName ${hDate.hYear}';
+    } else if (locale == 'en') {
+      const enMonths = ['Muharram', 'Safar', 'Rabiʻ I', 'Rabiʻ II', 'Jumada I', 'Jumada II', 'Rajab', 'Shaʻban', 'Ramadan', 'Shawwal', 'Dhu al-Qiʻdah', 'Dhu al-Hijjah'];
+      final monthName = hDate.hMonth >= 1 && hDate.hMonth <= 12 ? enMonths[hDate.hMonth - 1] : '';
+      return '${hDate.hDay} $monthName ${hDate.hYear}';
+    }
+
     final monthName = _hijriMonthName(hDate.hMonth);
     return toWesternDigits('${hDate.hDay} $monthName ${hDate.hYear}');
   }
@@ -413,6 +511,21 @@ class PrayerService {
 
     final normalized = name.trim().toLowerCase();
     return _latinCityNames[normalized] ?? name;
+  }
+
+  static String getLocalizedCityName(BuildContext context, String arabicName) {
+    if (arabicName == _currentLocationName) {
+       return AppLocalizations.of(context)!.location;
+    }
+    final locale = Localizations.localeOf(context).languageCode;
+    if (locale == 'ar') return arabicName;
+    
+    for (final entry in _latinCityNames.entries) {
+      if (entry.value == arabicName) {
+        return entry.key.split(' ').map((w) => w.isEmpty ? '' : '${w[0].toUpperCase()}${w.substring(1)}').join(' ');
+      }
+    }
+    return arabicName;
   }
 
   static const Map<String, String> _latinCityNames = {

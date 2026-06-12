@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/core/theme.dart';
+import 'package:quran_app/features/bukhari/bukhari_hadiths_screen.dart';
 import 'package:quran_app/features/bukhari/bukhari_models.dart';
 import 'package:quran_app/features/bukhari/bukhari_service.dart';
-import 'package:quran_app/features/bukhari/bukhari_hadiths_screen.dart';
 import 'package:quran_app/features/bukhari/bukhari_search_delegate.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class BukhariBooksScreen extends StatefulWidget {
   const BukhariBooksScreen({super.key});
@@ -72,19 +73,20 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
   }
 
   Future<void> _confirmDelete() async {
+    final l10n = AppLocalizations.of(context)!;
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('حذف صحيح البخاري'),
-        content: const Text('هل أنت متأكد أنك تريد حذف كتاب صحيح البخاري من جهازك؟ ستحتاج إلى إنترنت لتحميله مرة أخرى.'),
+        title: Text(l10n.bukhariDeleteTitle),
+        content: Text(l10n.bukhariDeleteContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('إلغاء'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+            child: Text(l10n.delete, style: const TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -108,8 +110,8 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
         setState(() {
           _books = books;
           _isLoading = false;
-          if (books.isEmpty) {
-            _error = "لم يتم العثور على أي كتب في قاعدة البيانات. تأكد من تحميل الملف.";
+          if (books.isEmpty && mounted) {
+            _error = AppLocalizations.of(context)!.bukhariNoBooksError;
           }
         });
       }
@@ -125,14 +127,13 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            'صحيح البخاري',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
+    final l10n = AppLocalizations.of(context)!;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          l10n.sahihBukhari,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
           centerTitle: true,
           actions: [
             if (_isDownloaded && !_isDownloading)
@@ -146,18 +147,18 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
                 onPressed: () {
                   showSearch(
                     context: context,
-                    delegate: BukhariSearchDelegate(),
+                    delegate: BukhariSearchDelegate(hintText: l10n.bukhariSearchHint),
                   );
                 },
               ),
           ],
         ),
         body: _buildBody(),
-      ),
     );
   }
 
   Widget _buildBody() {
+    final l10n = AppLocalizations.of(context)!;
     if (_isDownloading) {
       return Center(
         child: Padding(
@@ -167,14 +168,14 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
             children: [
               Icon(Icons.cloud_download_rounded, size: 80, color: AppTheme.primaryColor.withOpacity(0.5)),
               const SizedBox(height: 24),
-              const Text(
-                'جاري تحميل صحيح البخاري...',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              Text(
+                l10n.bukhariDownloading,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text(
-                'نرجو الانتظار، الحجم التقريبي 9 ميغابايت',
-                style: TextStyle(color: Colors.grey),
+              Text(
+                l10n.bukhariDownloadWait,
+                style: const TextStyle(color: Colors.grey),
               ),
               const SizedBox(height: 24),
               LinearProgressIndicator(
@@ -201,21 +202,21 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
             children: [
               Icon(Icons.menu_book_rounded, size: 80, color: AppTheme.primaryColor),
               const SizedBox(height: 24),
-              const Text(
-                'صحيح البخاري',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              Text(
+                l10n.sahihBukhari,
+                style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'يحتوي على أكثر من 7000 حديث شريف.\nقم بتحميل الكتاب الآن لتصفح الأحاديث بدون إنترنت في أي وقت.',
+              Text(
+                l10n.bukhariDescription,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, height: 1.5, fontSize: 16),
+                style: const TextStyle(color: Colors.grey, height: 1.5, fontSize: 16),
               ),
               const SizedBox(height: 32),
               ElevatedButton.icon(
                 onPressed: _startDownload,
                 icon: const Icon(Icons.download_rounded),
-                label: const Text('تحميل الكتاب (9.4MB)'),
+                label: Text(l10n.bukhariDownloadBtn),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
                   foregroundColor: Colors.white,
@@ -255,7 +256,7 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
                   });
                   _checkStatus();
                 },
-                child: const Text('إعادة المحاولة'),
+                child: Text(l10n.retry),
               )
             ],
           ),
@@ -307,7 +308,7 @@ class _BukhariBooksScreenState extends State<BukhariBooksScreen> {
                         ),
                       ),
                       subtitle: Text(
-                        'الأحاديث: ${book.hadiths.length}',
+                        l10n.bukhariHadiths(book.hadiths.length),
                         style: TextStyle(
                           color: AppTheme.mutedTextColor(context),
                           fontSize: 13,

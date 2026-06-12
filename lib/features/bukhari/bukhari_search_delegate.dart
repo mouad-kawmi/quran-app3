@@ -3,11 +3,12 @@ import 'package:quran_app/core/app_settings.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/bukhari/bukhari_models.dart';
 import 'package:quran_app/features/bukhari/bukhari_service.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 import 'package:share_plus/share_plus.dart';
 
 class BukhariSearchDelegate extends SearchDelegate {
-  @override
-  String get searchFieldLabel => 'ابحث برقم الحديث أو الكلمة...';
+  BukhariSearchDelegate({required String hintText})
+      : super(searchFieldLabel: hintText);
 
   @override
   ThemeData appBarTheme(BuildContext context) {
@@ -53,7 +54,7 @@ class BukhariSearchDelegate extends SearchDelegate {
 
   @override
   Widget buildResults(BuildContext context) {
-    return _buildSearchResults();
+    return _buildSearchResults(context);
   }
 
   @override
@@ -66,26 +67,26 @@ class BukhariSearchDelegate extends SearchDelegate {
             Icon(Icons.search_rounded,
                 size: 80, color: AppTheme.primaryColor.withOpacity(0.5)),
             const SizedBox(height: 16),
-            const Text(
-              'اكتب رقم الحديث (مثال: 1) \nأو كلمة للبحث عنها',
+            Text(
+              AppLocalizations.of(context)!.bukhariSearchEmptyText,
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, color: Colors.grey),
+              style: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
           ],
         ),
       );
     }
-    return _buildSearchResults();
+    return _buildSearchResults(context);
   }
 
-  Widget _buildSearchResults() {
+  Widget _buildSearchResults(BuildContext context) {
     final results = BukhariService().searchHadith(query);
 
     if (results.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
-          'لم يتم العثور على نتائج تطابق بحثك',
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          AppLocalizations.of(context)!.bukhariSearchNoResults,
+          style: const TextStyle(fontSize: 16, color: Colors.grey),
         ),
       );
     }
@@ -105,8 +106,9 @@ class BukhariSearchDelegate extends SearchDelegate {
   Widget _buildSearchCard(
       BuildContext context, BukhariHadith hadith, BukhariBook? book) {
     final settings = AppSettingsScope.watch(context);
+    final l10n = AppLocalizations.of(context)!;
     final fontScale = settings.fontScale;
-    final bookName = book?.nameArabic ?? 'كتاب غير معروف';
+    final bookName = book?.nameArabic ?? l10n.unknownBook;
 
     return Card(
       elevation: 2,
@@ -128,7 +130,7 @@ class BukhariSearchDelegate extends SearchDelegate {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      'حديث رقم ${hadith.hadithNumber} - $bookName',
+                      '${l10n.hadithNumber(hadith.hadithNumber)} - $bookName',
                       style: TextStyle(
                         color: AppTheme.primaryColor,
                         fontWeight: FontWeight.bold,
@@ -147,7 +149,7 @@ class BukhariSearchDelegate extends SearchDelegate {
                   onPressed: () {
                     SharePlus.instance.share(ShareParams(
                         text:
-                            'صحيح البخاري\n$bookName\n\n${hadith.text}\n\n(حديث رقم ${hadith.hadithNumber})'));
+                            '${l10n.sahihBukhari}\n$bookName\n\n${hadith.text}\n\n(${l10n.hadithNumber(hadith.hadithNumber)})'));
                   },
                 ),
               ],
