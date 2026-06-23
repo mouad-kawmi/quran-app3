@@ -8,9 +8,12 @@ import 'package:quran_app/core/quran_database.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/navigation/app_shell.dart';
 import 'package:quran_app/l10n/app_localizations.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  
   final settings = AppSettingsController();
 
   // Start loading settings without blocking runApp — app starts instantly
@@ -26,6 +29,10 @@ Future<void> _prepareApp(AppSettingsController settings) async {
       initializeDateFormatting('ar', null),
       settings.load(),
     ]);
+    
+    // Remove splash screen cleanly only after settings and locale have loaded
+    FlutterNativeSplash.remove();
+    
     unawaited(_initializeAppServices());
   } catch (error, stackTrace) {
     FlutterError.reportError(
@@ -41,8 +48,11 @@ Future<void> _prepareApp(AppSettingsController settings) async {
 
 Future<void> _initializeAppServices() async {
   try {
-    unawaited(QuranRepository.instance.warmUp());
-    await PrayerNotificationService.initialize(refreshReminders: true);
+    // Delay heavy background initialization to let home screen render smoothly
+    Future.delayed(const Duration(seconds: 3), () async {
+      unawaited(QuranRepository.instance.warmUp());
+      await PrayerNotificationService.initialize(refreshReminders: false);
+    });
   } catch (error, stackTrace) {
     FlutterError.reportError(
       FlutterErrorDetails(

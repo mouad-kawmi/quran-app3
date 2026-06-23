@@ -962,6 +962,13 @@ class PrayerNotificationService {
       return;
     }
 
+    final prefs = await SharedPreferences.getInstance();
+    final alreadyDeleted = prefs.getBool('legacy_channels_deleted_v3') ?? false;
+    if (alreadyDeleted) {
+      _legacyChannelsDeleted = true;
+      return;
+    }
+
     final android = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
@@ -969,6 +976,8 @@ class PrayerNotificationService {
     for (final channelId in _legacyAdhanChannelIds) {
       await android?.deleteNotificationChannel(channelId: channelId);
     }
+    
+    await prefs.setBool('legacy_channels_deleted_v3', true);
     _legacyChannelsDeleted = true;
   }
 

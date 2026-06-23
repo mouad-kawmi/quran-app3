@@ -182,14 +182,19 @@ class _HomeScreenState extends State<HomeScreen> {
       if (!mounted || requestSerial != _locationRequestSerial) return;
 
       _applyPrayerLocation(location);
-      unawaited(
-        PrayerNotificationService.schedulePrayerReminders(
-          location.coordinates,
-        ).whenComplete(() {
-          if (!mounted) return;
-          unawaited(_refreshAdhanSetupStatus(showInitialPrompt: true));
-        }),
-      );
+      
+      // تأخير المهام التقيلة (حساب التنبيهات والأذان لـ 14 يوم) باش ما يتزيرش الـ UI
+      Future.delayed(const Duration(seconds: 3), () {
+        if (!mounted) return;
+        unawaited(
+          PrayerNotificationService.schedulePrayerReminders(
+            location.coordinates,
+          ).whenComplete(() {
+            if (!mounted) return;
+            unawaited(_refreshAdhanSetupStatus(showInitialPrompt: true));
+          }),
+        );
+      });
     } on PrayerLocationException catch (error) {
       if (!mounted || requestSerial != _locationRequestSerial) return;
       setState(() {
