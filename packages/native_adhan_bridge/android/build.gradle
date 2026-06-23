@@ -2,7 +2,7 @@ group 'com.mouad.quran.native_adhan_bridge'
 version '1.0-SNAPSHOT'
 
 buildscript {
-    ext.kotlin_version = '1.8.0'
+    ext.kotlin_version = '1.9.22' // تحديث لنسخة متوافقة مع Java 17
     repositories {
         google()
         mavenCentral()
@@ -20,8 +20,12 @@ android {
     compileSdkVersion 34
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17 // توحيد مع التطبيق الرئيسي
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17" // ضروري باش يتوافق مع compileOptions
     }
 
     defaultConfig {
