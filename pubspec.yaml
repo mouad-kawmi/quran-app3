@@ -57,6 +57,8 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   geocoding: ^4.0.0
+  native_adhan_bridge:
+    path: packages/native_adhan_bridge
 
 
 dev_dependencies:
