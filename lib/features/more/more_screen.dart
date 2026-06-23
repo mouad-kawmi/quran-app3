@@ -6,6 +6,7 @@ import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/features/adhan/adhan_settings_screen.dart';
 import 'package:quran_app/features/more/asma_ul_husna_screen.dart';
 import 'package:quran_app/features/more/contact_us_screen.dart';
+import 'package:quran_app/features/more/privacy_policy_screen.dart';
 import 'package:quran_app/features/more/sunnah_reminders_screen.dart';
 import 'package:quran_app/features/khatma/khatma_screen.dart';
 import 'package:quran_app/features/prayer_times/prayer_times_screen.dart';
@@ -166,6 +167,18 @@ class MoreScreen extends StatelessWidget {
             _buildSection(l10n.aboutApp),
             _buildMoreItem(
               context,
+              Icons.privacy_tip_rounded,
+              _privacyPolicyTitle(context),
+              _privacyPolicyDescription(context),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const PrivacyPolicyScreen(),
+                ),
+              ),
+            ),
+            _buildMoreItem(
+              context,
               Icons.mark_email_unread_rounded,
               l10n.contactUs,
               l10n.contactUsDesc,
@@ -193,6 +206,22 @@ class MoreScreen extends StatelessWidget {
           ],
         ),
     );
+  }
+
+  String _privacyPolicyTitle(BuildContext context) {
+    return switch (Localizations.localeOf(context).languageCode) {
+      'ar' => 'سياسة الخصوصية',
+      'fr' => 'Politique de confidentialité',
+      _ => 'Privacy Policy',
+    };
+  }
+
+  String _privacyPolicyDescription(BuildContext context) {
+    return switch (Localizations.localeOf(context).languageCode) {
+      'ar' => 'كيف نستعمل الموقع، الإنترنت، التنبيهات، ونموذج التواصل',
+      'fr' => 'Position, Internet, notifications et formulaire de contact',
+      _ => 'Location, internet, notifications, and contact form',
+    };
   }
 
   String _getThemeLabel(BuildContext context, ThemeMode mode, AppLocalizations l10n) {
@@ -231,26 +260,33 @@ class MoreScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildThemeOption(
-                  sheetContext,
-                  settings,
-                  ThemeMode.light,
-                  l10n.lightTheme,
-                  Icons.light_mode_rounded,
-                ),
-                _buildThemeOption(
-                  sheetContext,
-                  settings,
-                  ThemeMode.dark,
-                  l10n.darkTheme,
-                  Icons.dark_mode_rounded,
-                ),
-                _buildThemeOption(
-                  sheetContext,
-                  settings,
-                  ThemeMode.system,
-                  l10n.systemTheme,
-                  Icons.phone_android_rounded,
+                RadioGroup<ThemeMode>(
+                  groupValue: settings.themeMode,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    unawaited(settings.setThemeMode(value));
+                    Navigator.pop(sheetContext);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildThemeOption(
+                        ThemeMode.light,
+                        l10n.lightTheme,
+                        Icons.light_mode_rounded,
+                      ),
+                      _buildThemeOption(
+                        ThemeMode.dark,
+                        l10n.darkTheme,
+                        Icons.dark_mode_rounded,
+                      ),
+                      _buildThemeOption(
+                        ThemeMode.system,
+                        l10n.systemTheme,
+                        Icons.phone_android_rounded,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -261,20 +297,12 @@ class MoreScreen extends StatelessWidget {
   }
 
   Widget _buildThemeOption(
-    BuildContext sheetContext,
-    AppSettingsController settings,
     ThemeMode mode,
     String title,
     IconData icon,
   ) {
     return RadioListTile<ThemeMode>(
       value: mode,
-      groupValue: settings.themeMode,
-      onChanged: (value) {
-        if (value == null) return;
-        unawaited(settings.setThemeMode(value));
-        Navigator.pop(sheetContext);
-      },
       activeColor: AppTheme.primaryColor,
       secondary: Icon(icon, color: AppTheme.primaryColor),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -302,23 +330,30 @@ class MoreScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildLanguageOption(
-                  sheetContext,
-                  settings,
-                  const Locale('ar'),
-                  l10n.arabic,
-                ),
-                _buildLanguageOption(
-                  sheetContext,
-                  settings,
-                  const Locale('en'),
-                  l10n.english,
-                ),
-                _buildLanguageOption(
-                  sheetContext,
-                  settings,
-                  const Locale('fr'),
-                  l10n.french,
+                RadioGroup<String>(
+                  groupValue: settings.locale.languageCode,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    unawaited(settings.setLocale(Locale(value)));
+                    Navigator.pop(sheetContext);
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildLanguageOption(
+                        const Locale('ar'),
+                        l10n.arabic,
+                      ),
+                      _buildLanguageOption(
+                        const Locale('en'),
+                        l10n.english,
+                      ),
+                      _buildLanguageOption(
+                        const Locale('fr'),
+                        l10n.french,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -329,19 +364,11 @@ class MoreScreen extends StatelessWidget {
   }
 
   Widget _buildLanguageOption(
-    BuildContext sheetContext,
-    AppSettingsController settings,
     Locale locale,
     String title,
   ) {
     return RadioListTile<String>(
       value: locale.languageCode,
-      groupValue: settings.locale.languageCode,
-      onChanged: (value) {
-        if (value == null) return;
-        unawaited(settings.setLocale(Locale(value)));
-        Navigator.pop(sheetContext);
-      },
       activeColor: AppTheme.primaryColor,
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
     );

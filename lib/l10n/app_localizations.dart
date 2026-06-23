@@ -1513,7 +1513,7 @@ abstract class AppLocalizations {
   /// No description provided for @sendBtn.
   ///
   /// In ar, this message translates to:
-  /// **'إرسال رسالة الآن'**
+  /// **'إرسال الرسالة الآن'**
   String get sendBtn;
 
   /// No description provided for @sendError.
@@ -1593,6 +1593,102 @@ abstract class AppLocalizations {
   /// In ar, this message translates to:
   /// **'أصوات الأذان من Wikimedia Commons تحت رخصة CC BY-SA 4.0: Andrewler و Atcovi.'**
   String get adhanAttribution;
+
+  /// No description provided for @verseFromSurah.
+  ///
+  /// In ar, this message translates to:
+  /// **'الآية {ayah} من سورة {surah}'**
+  String verseFromSurah(String ayah, String surah);
+
+  /// No description provided for @playFromHere.
+  ///
+  /// In ar, this message translates to:
+  /// **'تشغيل من هذه الآية'**
+  String get playFromHere;
+
+  /// No description provided for @removeBookmark.
+  ///
+  /// In ar, this message translates to:
+  /// **'حذف من العلامات'**
+  String get removeBookmark;
+
+  /// No description provided for @addBookmark.
+  ///
+  /// In ar, this message translates to:
+  /// **'حفظ علامة هنا'**
+  String get addBookmark;
+
+  /// No description provided for @bookmarkAdded.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حفظ العلامة.'**
+  String get bookmarkAdded;
+
+  /// No description provided for @bookmarkRemoved.
+  ///
+  /// In ar, this message translates to:
+  /// **'تم حذف العلامة من هذا الموضع.'**
+  String get bookmarkRemoved;
+
+  /// No description provided for @easyTafsir.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفسير الميسر'**
+  String get easyTafsir;
+
+  /// No description provided for @translationEnglish.
+  ///
+  /// In ar, this message translates to:
+  /// **'الترجمة (English)'**
+  String get translationEnglish;
+
+  /// No description provided for @shareAyah.
+  ///
+  /// In ar, this message translates to:
+  /// **'مشاركة الآية'**
+  String get shareAyah;
+
+  /// No description provided for @tafsirOfAyah.
+  ///
+  /// In ar, this message translates to:
+  /// **'تفسير الآية {ayah}'**
+  String tafsirOfAyah(String ayah);
+
+  /// No description provided for @tafsirNotAvailable.
+  ///
+  /// In ar, this message translates to:
+  /// **'التفسير غير متوفر لهذه الآية.'**
+  String get tafsirNotAvailable;
+
+  /// No description provided for @close.
+  ///
+  /// In ar, this message translates to:
+  /// **'إغلاق'**
+  String get close;
+
+  /// No description provided for @readingSettings.
+  ///
+  /// In ar, this message translates to:
+  /// **'إعدادات القراءة'**
+  String get readingSettings;
+
+  /// No description provided for @useQcfFont.
+  ///
+  /// In ar, this message translates to:
+  /// **'استخدام خط المصحف العثماني (QCF)'**
+  String get useQcfFont;
+
+  /// No description provided for @qcfFontDesc.
+  ///
+  /// In ar, this message translates to:
+  /// **'شكل الصفحات يطابق مصحف المدينة'**
+  String get qcfFontDesc;
+
+  /// No description provided for @normalFontSize.
+  ///
+  /// In ar, this message translates to:
+  /// **'حجم الخط العادي: {size}'**
+  String normalFontSize(String size);
 }
 
 class _AppLocalizationsDelegate

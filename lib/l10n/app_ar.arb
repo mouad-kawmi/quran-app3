@@ -414,7 +414,7 @@
   "requiredField": "هذا الحقل مطلوب",
   "messageText": "نص الرسالة",
   "messageHint": "اكتب تفاصيل الرسالة هنا...",
-  "sendBtn": "إرسال رسالة الآن",
+  "sendBtn": "إرسال الرسالة الآن",
   "sendError": "حدث خطأ أثناء الإرسال، تحقق من اتصالك بالإنترنت.",
   "tajweedRulesTitle": "أحكام التجويد الملونة",
   "allCategory": "الكل",
@@ -427,5 +427,45 @@
   "adhanDisabled": "الأذان غير مفعّل",
   "stopPreview": "إيقاف المعاينة",
   "listenAdhan": "استماع للأذان",
-  "adhanAttribution": "أصوات الأذان من Wikimedia Commons تحت رخصة CC BY-SA 4.0: Andrewler و Atcovi."
+  "adhanAttribution": "أصوات الأذان من Wikimedia Commons تحت رخصة CC BY-SA 4.0: Andrewler و Atcovi.",
+  "verseFromSurah": "الآية {ayah} من سورة {surah}",
+  "playFromHere": "تشغيل من هذه الآية",
+  "removeBookmark": "حذف من العلامات",
+  "addBookmark": "حفظ علامة هنا",
+  "bookmarkAdded": "تم حفظ العلامة.",
+  "bookmarkRemoved": "تم حذف العلامة من هذا الموضع.",
+  "easyTafsir": "التفسير الميسر",
+  "translationEnglish": "الترجمة (English)",
+  "shareAyah": "مشاركة الآية",
+  "tafsirOfAyah": "تفسير الآية {ayah}",
+  "tafsirNotAvailable": "التفسير غير متوفر لهذه الآية.",
+  "close": "إغلاق",
+  "readingSettings": "إعدادات القراءة",
+  "useQcfFont": "استخدام خط المصحف العثماني (QCF)",
+  "qcfFontDesc": "شكل الصفحات يطابق مصحف المدينة",
+  "normalFontSize": "حجم الخط العادي: {size}",
+  "@verseFromSurah": {
+    "placeholders": {
+      "ayah": {
+        "type": "String"
+      },
+      "surah": {
+        "type": "String"
+      }
+    }
+  },
+  "@tafsirOfAyah": {
+    "placeholders": {
+      "ayah": {
+        "type": "String"
+      }
+    }
+  },
+  "@normalFontSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }

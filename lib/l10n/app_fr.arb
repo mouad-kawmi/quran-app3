@@ -427,5 +427,45 @@
   "adhanDisabled": "Adhan désactivé",
   "stopPreview": "Arrêter l'aperçu",
   "listenAdhan": "Écouter l'Adhan",
-  "adhanAttribution": "Sons d'Adhan de Wikimedia Commons sous licence CC BY-SA 4.0 : Andrewler et Atcovi."
+  "adhanAttribution": "Sons d'Adhan de Wikimedia Commons sous licence CC BY-SA 4.0 : Andrewler et Atcovi.",
+  "verseFromSurah": "Verset {ayah} de la sourate {surah}",
+  "playFromHere": "Jouer à partir de ce verset",
+  "removeBookmark": "Supprimer le signet",
+  "addBookmark": "Ajouter un signet ici",
+  "bookmarkAdded": "Signet ajouté.",
+  "bookmarkRemoved": "Signet supprimé de cette position.",
+  "easyTafsir": "Tafsir Simplifié (Arabe)",
+  "translationEnglish": "Traduction (Anglais)",
+  "shareAyah": "Partager le verset",
+  "tafsirOfAyah": "Tafsir du verset {ayah}",
+  "tafsirNotAvailable": "Le Tafsir n'est pas disponible pour ce verset.",
+  "close": "Fermer",
+  "readingSettings": "Paramètres de lecture",
+  "useQcfFont": "Utiliser la police Othmani QCF",
+  "qcfFontDesc": "La mise en page correspond au Mushaf de Médine",
+  "normalFontSize": "Taille de police normale : {size}",
+  "@verseFromSurah": {
+    "placeholders": {
+      "ayah": {
+        "type": "String"
+      },
+      "surah": {
+        "type": "String"
+      }
+    }
+  },
+  "@tafsirOfAyah": {
+    "placeholders": {
+      "ayah": {
+        "type": "String"
+      }
+    }
+  },
+  "@normalFontSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }

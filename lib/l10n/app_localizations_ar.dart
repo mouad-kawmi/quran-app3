@@ -785,7 +785,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messageHint => 'اكتب تفاصيل الرسالة هنا...';
 
   @override
-  String get sendBtn => 'إرسال رسالة الآن';
+  String get sendBtn => 'إرسال الرسالة الآن';
 
   @override
   String get sendError => 'حدث خطأ أثناء الإرسال، تحقق من اتصالك بالإنترنت.';
@@ -827,4 +827,58 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get adhanAttribution =>
       'أصوات الأذان من Wikimedia Commons تحت رخصة CC BY-SA 4.0: Andrewler و Atcovi.';
+
+  @override
+  String verseFromSurah(String ayah, String surah) {
+    return 'الآية $ayah من سورة $surah';
+  }
+
+  @override
+  String get playFromHere => 'تشغيل من هذه الآية';
+
+  @override
+  String get removeBookmark => 'حذف من العلامات';
+
+  @override
+  String get addBookmark => 'حفظ علامة هنا';
+
+  @override
+  String get bookmarkAdded => 'تم حفظ العلامة.';
+
+  @override
+  String get bookmarkRemoved => 'تم حذف العلامة من هذا الموضع.';
+
+  @override
+  String get easyTafsir => 'التفسير الميسر';
+
+  @override
+  String get translationEnglish => 'الترجمة (English)';
+
+  @override
+  String get shareAyah => 'مشاركة الآية';
+
+  @override
+  String tafsirOfAyah(String ayah) {
+    return 'تفسير الآية $ayah';
+  }
+
+  @override
+  String get tafsirNotAvailable => 'التفسير غير متوفر لهذه الآية.';
+
+  @override
+  String get close => 'إغلاق';
+
+  @override
+  String get readingSettings => 'إعدادات القراءة';
+
+  @override
+  String get useQcfFont => 'استخدام خط المصحف العثماني (QCF)';
+
+  @override
+  String get qcfFontDesc => 'شكل الصفحات يطابق مصحف المدينة';
+
+  @override
+  String normalFontSize(String size) {
+    return 'حجم الخط العادي: $size';
+  }
 }

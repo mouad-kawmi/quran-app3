@@ -844,4 +844,59 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get adhanAttribution =>
       'Sons d\'Adhan de Wikimedia Commons sous licence CC BY-SA 4.0 : Andrewler et Atcovi.';
+
+  @override
+  String verseFromSurah(String ayah, String surah) {
+    return 'Verset $ayah de la sourate $surah';
+  }
+
+  @override
+  String get playFromHere => 'Jouer à partir de ce verset';
+
+  @override
+  String get removeBookmark => 'Supprimer le signet';
+
+  @override
+  String get addBookmark => 'Ajouter un signet ici';
+
+  @override
+  String get bookmarkAdded => 'Signet ajouté.';
+
+  @override
+  String get bookmarkRemoved => 'Signet supprimé de cette position.';
+
+  @override
+  String get easyTafsir => 'Tafsir Simplifié (Arabe)';
+
+  @override
+  String get translationEnglish => 'Traduction (Anglais)';
+
+  @override
+  String get shareAyah => 'Partager le verset';
+
+  @override
+  String tafsirOfAyah(String ayah) {
+    return 'Tafsir du verset $ayah';
+  }
+
+  @override
+  String get tafsirNotAvailable =>
+      'Le Tafsir n\'est pas disponible pour ce verset.';
+
+  @override
+  String get close => 'Fermer';
+
+  @override
+  String get readingSettings => 'Paramètres de lecture';
+
+  @override
+  String get useQcfFont => 'Utiliser la police Othmani QCF';
+
+  @override
+  String get qcfFontDesc => 'La mise en page correspond au Mushaf de Médine';
+
+  @override
+  String normalFontSize(String size) {
+    return 'Taille de police normale : $size';
+  }
 }

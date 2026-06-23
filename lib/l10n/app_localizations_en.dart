@@ -832,4 +832,58 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adhanAttribution =>
       'Adhan audio from Wikimedia Commons under CC BY-SA 4.0: Andrewler and Atcovi.';
+
+  @override
+  String verseFromSurah(String ayah, String surah) {
+    return 'Verse $ayah from Surah $surah';
+  }
+
+  @override
+  String get playFromHere => 'Play from this verse';
+
+  @override
+  String get removeBookmark => 'Remove bookmark';
+
+  @override
+  String get addBookmark => 'Add bookmark here';
+
+  @override
+  String get bookmarkAdded => 'Bookmark added.';
+
+  @override
+  String get bookmarkRemoved => 'Bookmark removed from this position.';
+
+  @override
+  String get easyTafsir => 'Easy Tafsir (Arabic)';
+
+  @override
+  String get translationEnglish => 'Translation (English)';
+
+  @override
+  String get shareAyah => 'Share verse';
+
+  @override
+  String tafsirOfAyah(String ayah) {
+    return 'Tafsir of verse $ayah';
+  }
+
+  @override
+  String get tafsirNotAvailable => 'Tafsir is not available for this verse.';
+
+  @override
+  String get close => 'Close';
+
+  @override
+  String get readingSettings => 'Reading Settings';
+
+  @override
+  String get useQcfFont => 'Use Uthmani QCF Font';
+
+  @override
+  String get qcfFontDesc => 'Pages match the Medina Mushaf appearance';
+
+  @override
+  String normalFontSize(String size) {
+    return 'Normal font size: $size';
+  }
 }

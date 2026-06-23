@@ -427,5 +427,45 @@
   "adhanDisabled": "Adhan disabled",
   "stopPreview": "Stop preview",
   "listenAdhan": "Listen to Adhan",
-  "adhanAttribution": "Adhan audio from Wikimedia Commons under CC BY-SA 4.0: Andrewler and Atcovi."
+  "adhanAttribution": "Adhan audio from Wikimedia Commons under CC BY-SA 4.0: Andrewler and Atcovi.",
+  "verseFromSurah": "Verse {ayah} from Surah {surah}",
+  "@verseFromSurah": {
+    "placeholders": {
+      "ayah": {
+        "type": "String"
+      },
+      "surah": {
+        "type": "String"
+      }
+    }
+  },
+  "playFromHere": "Play from this verse",
+  "removeBookmark": "Remove bookmark",
+  "addBookmark": "Add bookmark here",
+  "bookmarkAdded": "Bookmark added.",
+  "bookmarkRemoved": "Bookmark removed from this position.",
+  "easyTafsir": "Easy Tafsir (Arabic)",
+  "translationEnglish": "Translation (English)",
+  "shareAyah": "Share verse",
+  "tafsirOfAyah": "Tafsir of verse {ayah}",
+  "@tafsirOfAyah": {
+    "placeholders": {
+      "ayah": {
+        "type": "String"
+      }
+    }
+  },
+  "tafsirNotAvailable": "Tafsir is not available for this verse.",
+  "close": "Close",
+  "readingSettings": "Reading Settings",
+  "useQcfFont": "Use Uthmani QCF Font",
+  "qcfFontDesc": "Pages match the Medina Mushaf appearance",
+  "normalFontSize": "Normal font size: {size}",
+  "@normalFontSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  }
 }

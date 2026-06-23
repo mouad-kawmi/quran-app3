@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
+import 'dart:math' show min, max;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -89,8 +90,6 @@ class _QcfMushafPageState extends State<QcfMushafPage> {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: pageColor,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: borderColor),
       ),
       child: Column(
         children: [
@@ -121,21 +120,38 @@ class _QcfMushafPageState extends State<QcfMushafPage> {
   }
 
   Widget _buildPageBody(Qcf4PageData pageData) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        10,
-        _topPaddingForPage(pageData.page),
-        10,
-        widget.bottomPadding,
-      ),
-      child: _Qcf4PageLines(
-        pageData: pageData,
-        selectedSurah: widget.selectedSurah,
-        selectedAyah: widget.selectedAyah,
-        highlightedSurah: widget.highlightedSurah,
-        highlightedAyah: widget.highlightedAyah,
-        onVerseTap: widget.onVerseTap,
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const kNaturalWidth = 370.0;
+        // Average line height at scale 1.0: 27px font × 1.3 lineHeight
+        const kBaseLineHeight = 35.1;
+
+        final numLines = max(1, pageData.lines.length);
+        final kNaturalHeight = numLines * kBaseLineHeight;
+
+        final scaleByWidth = constraints.maxWidth / kNaturalWidth;
+        final scaleByHeight = constraints.maxHeight / kNaturalHeight;
+        // Use the limiting dimension so we never overflow vertically
+        final scaleFactor = min(scaleByWidth, scaleByHeight).clamp(0.8, 3.0);
+
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+            10,
+            _topPaddingForPage(pageData.page),
+            10,
+            widget.bottomPadding,
+          ),
+          child: _Qcf4PageLines(
+            pageData: pageData,
+            scaleFactor: scaleFactor,
+            selectedSurah: widget.selectedSurah,
+            selectedAyah: widget.selectedAyah,
+            highlightedSurah: widget.highlightedSurah,
+            highlightedAyah: widget.highlightedAyah,
+            onVerseTap: widget.onVerseTap,
+          ),
+        );
+      },
     );
   }
 }
@@ -421,6 +437,7 @@ class Qcf4WordData {
 class _Qcf4PageLines extends StatelessWidget {
   const _Qcf4PageLines({
     required this.pageData,
+    required this.scaleFactor,
     required this.selectedSurah,
     required this.selectedAyah,
     required this.highlightedSurah,
@@ -429,6 +446,7 @@ class _Qcf4PageLines extends StatelessWidget {
   });
 
   final Qcf4PageData pageData;
+  final double scaleFactor;
   final int? selectedSurah;
   final int? selectedAyah;
   final int? highlightedSurah;
@@ -438,13 +456,13 @@ class _Qcf4PageLines extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = AppTheme.isDark(context);
-    // â† Ù†Ø­Ø³Ø¨Ùˆ Ù…Ø±Ø© ÙˆØ§Ø­Ø¯Ø© Ù‡Ù†Ø§ ÙˆÙŠÙ†ÙØ¹ Ø¨ÙŠÙ‡ Ù ÙƒÙ„ ÙƒÙ„Ù…Ø©
     final lines = pageData.lines
         .map(
           (line) => _Qcf4Line(
             pageNumber: pageData.page,
             line: line,
             isDark: isDark,
+            scaleFactor: scaleFactor,
             selectedSurah: selectedSurah,
             selectedAyah: selectedAyah,
             highlightedSurah: highlightedSurah,
@@ -466,6 +484,7 @@ class _Qcf4Line extends StatelessWidget {
     required this.pageNumber,
     required this.line,
     required this.isDark,
+    required this.scaleFactor,
     required this.selectedSurah,
     required this.selectedAyah,
     required this.highlightedSurah,
@@ -476,6 +495,7 @@ class _Qcf4Line extends StatelessWidget {
   final int pageNumber;
   final Qcf4LineData line;
   final bool isDark;
+  final double scaleFactor;
   final int? selectedSurah;
   final int? selectedAyah;
   final int? highlightedSurah;
@@ -512,7 +532,7 @@ class _Qcf4Line extends StatelessWidget {
                 ? AppTheme.primaryColor.withValues(alpha: 0.14)
                 : null,
             fontFamily: word.font,
-            fontSize: _fontSizeForWord(pageNumber: pageNumber, word: word),
+            fontSize: _fontSizeForWord(pageNumber: pageNumber, word: word) * scaleFactor,
             height: isDecoration ? 1.1 : 1.3,
             letterSpacing: 0,
             wordSpacing: 0,
@@ -558,9 +578,6 @@ class _MushafPageTopBar extends StatelessWidget {
     return Container(
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: borderColor)),
-      ),
       child: Row(
         children: [
           SizedBox(

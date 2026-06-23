@@ -15,6 +15,7 @@ class ContactUsScreen extends StatefulWidget {
 class _ContactUsScreenState extends State<ContactUsScreen> {
   // 🔴 تم إعداد الرابط الخاص بك بنجاح
   static const String _formspreeUrl = 'https://formspree.io/f/maqzqyez';
+  static const String _supportEmail = 'support@nooralquran.app';
 
   final _formKey = GlobalKey<FormState>();
   final _subjectController = TextEditingController();
@@ -120,15 +121,17 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
                   height: 1.5,
                 ),
               ),
+              const SizedBox(height: 16),
+              _buildDataDeletionNotice(context),
               const SizedBox(height: 32),
               
               if (_isSuccess)
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
+                    color: Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     children: [
@@ -223,5 +226,55 @@ class _ContactUsScreenState extends State<ContactUsScreen> {
           ),
         ),
     );
+  }
+
+  Widget _buildDataDeletionNotice(BuildContext context) {
+    final dark = AppTheme.isDark(context);
+    final text = _contactDataDeletionText(
+      Localizations.localeOf(context).languageCode,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.12),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.privacy_tip_rounded,
+            color: AppTheme.primaryColor,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: dark ? Colors.white70 : Colors.black87,
+                fontSize: 13,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _contactDataDeletionText(String locale) {
+    return switch (locale) {
+      'ar' =>
+        'لطلب حذف الرسائل أو البيانات التي أرسلتها عبر نموذج التواصل، تواصل معنا عبر: $_supportEmail',
+      'fr' =>
+        'Pour demander la suppression des messages ou données envoyés via ce formulaire, contactez-nous à : $_supportEmail',
+      _ =>
+        'To request deletion of messages or data sent through this form, contact us at: $_supportEmail',
+    };
   }
 }

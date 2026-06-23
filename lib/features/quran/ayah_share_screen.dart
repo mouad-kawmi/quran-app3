@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:quran/quran.dart' as quran;
 import 'package:quran_app/core/theme.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:quran_app/l10n/app_localizations.dart';
 
 class AyahShareScreen extends StatefulWidget {
   const AyahShareScreen({
@@ -69,31 +70,28 @@ class _AyahShareScreenState extends State<AyahShareScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('مشاركة الآية', style: TextStyle(fontWeight: FontWeight.bold)),
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-        ),
-        body: Column(
-          children: [
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-                  child: RepaintBoundary(
-                    key: _cardKey,
-                    child: _buildShareCard(),
-                  ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(AppLocalizations.of(context)!.shareAyah, style: const TextStyle(fontWeight: FontWeight.bold)),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                child: RepaintBoundary(
+                  key: _cardKey,
+                  child: _buildShareCard(),
                 ),
               ),
             ),
-            _buildActionButtons(),
-            const SizedBox(height: 32),
-          ],
-        ),
+          ),
+          _buildActionButtons(),
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }

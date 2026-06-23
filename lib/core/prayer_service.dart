@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:quran_app/l10n/app_localizations.dart';
@@ -189,10 +190,10 @@ class PrayerService {
         desiredAccuracy: LocationAccuracy.medium,
         timeLimit: timeout,
       );
-      return _locationFromPosition(position);
+      return await _locationFromPosition(position);
     } on TimeoutException {
       if (lastKnown != null) {
-        return _locationFromPosition(lastKnown);
+        return await _locationFromPosition(lastKnown);
       }
       throw const PrayerLocationException(
         'تعذر الحصول على الموقع الآن. فعّل خدمة الموقع وحاول مرة أخرى.',
@@ -232,6 +233,156 @@ class PrayerService {
   }
 
   static PrayerTimes getPrayerTimes(Coordinates coordinates, DateTime date) {
+    final params = _calculationParametersFor(coordinates);
+    return PrayerTimes(coordinates, DateComponents.from(date), params);
+  }
+
+  static CalculationParameters _calculationParametersFor(
+    Coordinates coordinates,
+  ) {
+    if (isInMorocco(coordinates)) {
+      return CalculationParameters(
+        fajrAngle: 19,
+        ishaAngle: 17,
+        method: CalculationMethod.other,
+      )..madhab = Madhab.shafi;
+    }
+
+    final method = _calculationMethodFor(coordinates);
+    final params = method.getParameters()..madhab = Madhab.shafi;
+    if (_usesHanafiAsr(coordinates)) {
+      params.madhab = Madhab.hanafi;
+    }
+    return params;
+  }
+
+  static CalculationMethod _calculationMethodFor(Coordinates coordinates) {
+    final latitude = coordinates.latitude;
+    final longitude = coordinates.longitude;
+
+    if (_isWithin(latitude, longitude, 15, 72, -170, -50)) {
+      return CalculationMethod.north_america;
+    }
+    if (_isWithin(latitude, longitude, 35, 43, 25, 45)) {
+      return CalculationMethod.turkey;
+    }
+    if (_isWithin(latitude, longitude, 24, 40, 44, 64)) {
+      return CalculationMethod.tehran;
+    }
+    if (_isWithin(latitude, longitude, 16, 33, 34, 56)) {
+      return CalculationMethod.umm_al_qura;
+    }
+    if (_isWithin(latitude, longitude, 28, 31, 46, 49)) {
+      return CalculationMethod.kuwait;
+    }
+    if (_isWithin(latitude, longitude, 24, 27, 50, 52)) {
+      return CalculationMethod.qatar;
+    }
+    if (_isWithin(latitude, longitude, 16, 31, 44, 60)) {
+      return CalculationMethod.dubai;
+    }
+    if (_isWithin(latitude, longitude, 5, 37, 60, 93)) {
+      return CalculationMethod.karachi;
+    }
+    if (_isWithin(latitude, longitude, -12, 8, 95, 141)) {
+      return CalculationMethod.singapore;
+    }
+    if (_isWithin(latitude, longitude, 8, 33, 20, 38)) {
+      return CalculationMethod.egyptian;
+    }
+
+    return CalculationMethod.muslim_world_league;
+  }
+
+  static bool _usesHanafiAsr(Coordinates coordinates) {
+    return _isWithin(coordinates.latitude, coordinates.longitude, 5, 37, 60, 93);
+  }
+
+  static bool _isWithin(
+    double latitude,
+    double longitude,
+    double minLatitude,
+    double maxLatitude,
+    double minLongitude,
+    double maxLongitude,
+  ) {
+    return latitude >= minLatitude &&
+        latitude <= maxLatitude &&
+        longitude >= minLongitude &&
+        longitude <= maxLongitude;
+  }
+
+  static bool isInMorocco(Coordinates coordinates) {
+    final latitude = coordinates.latitude;
+    final longitude = coordinates.longitude;
+    if (!latitude.isFinite || !longitude.isFinite) {
+      return false;
+    }
+
+    return _pointInPolygon(latitude, longitude, _moroccoMainlandPolygon) ||
+        _pointInPolygon(latitude, longitude, _moroccoSaharaPolygon);
+  }
+
+  static bool _pointInPolygon(
+    double latitude,
+    double longitude,
+    List<_GeoPoint> polygon,
+  ) {
+    var isInside = false;
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      final point = polygon[i];
+      final previousPoint = polygon[j];
+      final intersects =
+          ((point.latitude > latitude) !=
+              (previousPoint.latitude > latitude)) &&
+          (longitude <
+              (previousPoint.longitude - point.longitude) *
+                      (latitude - point.latitude) /
+                      (previousPoint.latitude - point.latitude) +
+                  point.longitude);
+      if (intersects) {
+        isInside = !isInside;
+      }
+    }
+    return isInside;
+  }
+
+  static const List<_GeoPoint> _moroccoMainlandPolygon = [
+    _GeoPoint(27.6, -13.2),
+    _GeoPoint(28.8, -12.0),
+    _GeoPoint(29.4, -10.6),
+    _GeoPoint(30.3, -10.2),
+    _GeoPoint(31.4, -9.8),
+    _GeoPoint(32.3, -9.3),
+    _GeoPoint(33.2, -9.0),
+    _GeoPoint(34.8, -7.8),
+    _GeoPoint(35.9, -6.0),
+    _GeoPoint(35.4, -4.7),
+    _GeoPoint(35.2, -2.9),
+    _GeoPoint(34.7, -1.0),
+    _GeoPoint(32.1, -1.0),
+    _GeoPoint(31.5, -2.0),
+    _GeoPoint(30.4, -2.5),
+    _GeoPoint(29.8, -3.6),
+    _GeoPoint(29.0, -5.2),
+    _GeoPoint(29.0, -7.0),
+    _GeoPoint(28.3, -8.7),
+    _GeoPoint(27.8, -10.0),
+  ];
+
+  static const List<_GeoPoint> _moroccoSaharaPolygon = [
+    _GeoPoint(20.7, -17.3),
+    _GeoPoint(20.7, -12.0),
+    _GeoPoint(27.7, -8.7),
+    _GeoPoint(27.7, -13.2),
+    _GeoPoint(26.0, -14.5),
+    _GeoPoint(24.0, -15.5),
+  ];
+
+  static PrayerTimes getMoroccoPrayerTimes(
+    Coordinates coordinates,
+    DateTime date,
+  ) {
     final params = CalculationParameters(
       fajrAngle: 19,
       ishaAngle: 17,
@@ -394,13 +545,39 @@ class PrayerService {
     return '$hours:$minutes:$seconds';
   }
 
-  static PrayerLocation _locationFromPosition(Position position) {
+  static Future<PrayerLocation> _locationFromPosition(Position position) async {
     final coordinates = Coordinates(position.latitude, position.longitude);
     return PrayerLocation(
       coordinates: coordinates,
-      name: _nearestCityName(position.latitude, position.longitude),
+      name: await _realCityName(position.latitude, position.longitude),
       accuracy: position.accuracy,
     );
+  }
+
+  static Future<String> _realCityName(double latitude, double longitude) async {
+    // 1. Try local offline list for Moroccan cities first
+    final closestName = _nearestCityName(latitude, longitude);
+    if (closestName != _currentLocationName) {
+      return closestName;
+    }
+
+    // 2. If outside Morocco or far from cities, use Geocoding API
+    try {
+      final placemarks = await geocoding.placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+        // Locality usually contains the city name (e.g. "Paris", "Lyon")
+        final city = place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? place.country ?? '';
+        if (city.isNotEmpty) {
+          return city;
+        }
+      }
+    } catch (_) {
+      // Ignore geocoding errors (e.g., no internet connection)
+    }
+
+    // 3. Fallback
+    return _currentLocationName;
   }
 
   static List<PrayerMoment> prayerMoments(PrayerTimes times) {
@@ -578,6 +755,13 @@ class _KnownCity {
   const _KnownCity(this.name, this.latitude, this.longitude);
 
   final String name;
+  final double latitude;
+  final double longitude;
+}
+
+class _GeoPoint {
+  const _GeoPoint(this.latitude, this.longitude);
+
   final double latitude;
   final double longitude;
 }

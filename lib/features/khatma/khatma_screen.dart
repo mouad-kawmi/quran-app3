@@ -51,16 +51,26 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
   Future<void> _confirmChangePlan(int days) async {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).languageCode;
-    final title = locale == 'en' ? 'Change Khatma Plan?'
-        : locale == 'fr' ? 'Changer le plan de Khatma ?'
+    final title = locale == 'en'
+        ? 'Change Khatma Plan?'
+        : locale == 'fr'
+        ? 'Changer le plan de Khatma ?'
         : 'تغيير خطة الختمة؟';
     final content = locale == 'en'
         ? 'Changing the plan will reset progress from the beginning to keep reading organized.'
         : locale == 'fr'
         ? 'Changer le plan réinitialisera la progression depuis le début pour rester organisé.'
         : 'عند تغيير الخطة سيبدأ التقدم من البداية للحفاظ على تقسيم منظم.';
-    final cancelLabel = locale == 'en' ? 'Cancel' : locale == 'fr' ? 'Annuler' : 'إلغاء';
-    final confirmLabel = locale == 'en' ? 'Change Plan' : locale == 'fr' ? 'Changer le plan' : 'تغيير الخطة';
+    final cancelLabel = locale == 'en'
+        ? 'Cancel'
+        : locale == 'fr'
+        ? 'Annuler'
+        : 'إلغاء';
+    final confirmLabel = locale == 'en'
+        ? 'Change Plan'
+        : locale == 'fr'
+        ? 'Changer le plan'
+        : 'تغيير الخطة';
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -109,8 +119,7 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
   }
 
   Future<void> _openPage(int page) async {
-    await Navigator.push(
-      context,
+    await Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(builder: (context) => KhatmaPageScreen(page: page)),
     );
     await _loadProgress();
@@ -155,8 +164,10 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
 
   Widget _buildIntroCard() {
     final locale = Localizations.localeOf(context).languageCode;
-    final title = locale == 'en' ? 'Choose Khatma Duration'
-        : locale == 'fr' ? 'Choisir la durée de la Khatma'
+    final title = locale == 'en'
+        ? 'Choose Khatma Duration'
+        : locale == 'fr'
+        ? 'Choisir la durée de la Khatma'
         : 'اختر مدة الختمة';
     final desc = locale == 'en'
         ? 'The app divides 604 pages according to your chosen duration. Mark each page after completing it.'
@@ -195,8 +206,10 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
 
   Widget _buildHowItWorksCard() {
     final locale = Localizations.localeOf(context).languageCode;
-    final title = locale == 'en' ? 'How does Khatma work?'
-        : locale == 'fr' ? 'Comment fonctionne la Khatma ?'
+    final title = locale == 'en'
+        ? 'How does Khatma work?'
+        : locale == 'fr'
+        ? 'Comment fonctionne la Khatma ?'
         : 'كيف تعمل الختمة؟';
     final steps = locale == 'en'
         ? [
@@ -319,41 +332,47 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
             ),
             const SizedBox(width: 14),
             Expanded(
-              child: Builder(builder: (context) {
-                final locale = Localizations.localeOf(context).languageCode;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                  Text(
-                    locale == 'en' ? '$days-Day Khatma'
-                        : locale == 'fr' ? 'Khatma de $days jours'
-                        : 'ختمة $days يوم',
-                    style: TextStyle(
-                      color: AppTheme.primaryTextColor(context),
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    KhatmaService.pagesPerDayLabel(days, locale),
-                    style: TextStyle(color: AppTheme.mutedTextColor(context)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    locale == 'en'
-                        ? 'Day 1: ${firstDay.startPage}-${firstDay.endPage} • Day $days: ${lastDay.startPage}-${lastDay.endPage}'
-                        : locale == 'fr'
-                        ? 'Jour 1: ${firstDay.startPage}-${firstDay.endPage} • Jour $days: ${lastDay.startPage}-${lastDay.endPage}'
-                        : 'اليوم 1: ${firstDay.startPage}-${firstDay.endPage} • اليوم $days: ${lastDay.startPage}-${lastDay.endPage}',
-                    style: TextStyle(
-                      color: AppTheme.mutedTextColor(context),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              );
-              }),
+              child: Builder(
+                builder: (context) {
+                  final locale = Localizations.localeOf(context).languageCode;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        locale == 'en'
+                            ? '$days-Day Khatma'
+                            : locale == 'fr'
+                            ? 'Khatma de $days jours'
+                            : 'ختمة $days يوم',
+                        style: TextStyle(
+                          color: AppTheme.primaryTextColor(context),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        KhatmaService.pagesPerDayLabel(days, locale),
+                        style: TextStyle(
+                          color: AppTheme.mutedTextColor(context),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        locale == 'en'
+                            ? 'Day 1: ${firstDay.startPage}-${firstDay.endPage} • Day $days: ${lastDay.startPage}-${lastDay.endPage}'
+                            : locale == 'fr'
+                            ? 'Jour 1: ${firstDay.startPage}-${firstDay.endPage} • Jour $days: ${lastDay.startPage}-${lastDay.endPage}'
+                            : 'اليوم 1: ${firstDay.startPage}-${firstDay.endPage} • اليوم $days: ${lastDay.startPage}-${lastDay.endPage}',
+                        style: TextStyle(
+                          color: AppTheme.mutedTextColor(context),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
             const Icon(Icons.arrow_forward_ios_rounded, size: 16),
           ],
@@ -419,7 +438,12 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _localStr(context, 'ما المطلوب الآن؟', 'What to do now?', 'Que faire maintenant ?'),
+                  _localStr(
+                    context,
+                    'ما المطلوب الآن؟',
+                    'What to do now?',
+                    'Que faire maintenant ?',
+                  ),
                   style: TextStyle(
                     color: AppTheme.primaryTextColor(context),
                     fontWeight: FontWeight.bold,
@@ -450,7 +474,8 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  _localStr(context,
+                  _localStr(
+                    context,
                     'منجزة اليوم: $completed/${selectedDay.pageCount}',
                     'Done today: $completed/${selectedDay.pageCount}',
                     'Faites aujourd\'hui : $completed/${selectedDay.pageCount}',
@@ -473,8 +498,10 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
     final locale = Localizations.localeOf(context).languageCode;
     final percent = (progress.ratio * 100).clamp(0, 100).toStringAsFixed(0);
     final nextPage = progress.nextPage;
-    final planTitle = locale == 'en' ? '${progress.planDays}-Day Khatma'
-        : locale == 'fr' ? 'Khatma de ${progress.planDays} jours'
+    final planTitle = locale == 'en'
+        ? '${progress.planDays}-Day Khatma'
+        : locale == 'fr'
+        ? 'Khatma de ${progress.planDays} jours'
         : 'ختمة ${progress.planDays} يوم';
 
     return Container(
@@ -539,7 +566,12 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
               ),
               Expanded(
                 child: _buildHeaderStat(
-                  _localStr(context, 'الصفحة التالية', 'Next Page', 'Page suivante'),
+                  _localStr(
+                    context,
+                    'الصفحة التالية',
+                    'Next Page',
+                    'Page suivante',
+                  ),
                   nextPage == null
                       ? _localStr(context, 'تمت', 'Done', 'Terminée')
                       : '$nextPage',
@@ -555,7 +587,12 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
               icon: const Icon(Icons.check_circle_rounded),
               label: Text(
                 nextPage == null
-                    ? _localStr(context, 'الختمة مكتملة', 'Khatma Completed', 'Khatma terminée')
+                    ? _localStr(
+                        context,
+                        'الختمة مكتملة',
+                        'Khatma Completed',
+                        'Khatma terminée',
+                      )
                     : _localStr(
                         context,
                         'علّم الصفحة $nextPage وانتقل إلى التالية',
@@ -614,7 +651,13 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
               children: [
                 for (final days in KhatmaService.availablePlans)
                   ChoiceChip(
-                    label: Text(locale == 'en' ? '$days days' : locale == 'fr' ? '$days jours' : '$days يوم'),
+                    label: Text(
+                      locale == 'en'
+                          ? '$days days'
+                          : locale == 'fr'
+                          ? '$days jours'
+                          : '$days يوم',
+                    ),
                     selected: days == currentDays,
                     onSelected: days == currentDays
                         ? null
@@ -665,7 +708,12 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    _localStr(context, 'اليوم ${day.number}', 'Day ${day.number}', 'Jour ${day.number}'),
+                    _localStr(
+                      context,
+                      'اليوم ${day.number}',
+                      'Day ${day.number}',
+                      'Jour ${day.number}',
+                    ),
                     style: TextStyle(
                       color: AppTheme.primaryTextColor(context),
                       fontWeight: FontWeight.bold,
@@ -721,7 +769,12 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _localStr(context, 'اليوم ${day.number}', 'Day ${day.number}', 'Jour ${day.number}'),
+                      _localStr(
+                        context,
+                        'اليوم ${day.number}',
+                        'Day ${day.number}',
+                        'Jour ${day.number}',
+                      ),
                       style: TextStyle(
                         color: AppTheme.primaryTextColor(context),
                         fontSize: 20,
@@ -730,14 +783,13 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _localStr(context,
+                      _localStr(
+                        context,
                         'من الصفحة ${day.startPage} حتى ${day.endPage}',
                         'Pages ${day.startPage}–${day.endPage}',
                         'Pages ${day.startPage}–${day.endPage}',
                       ),
-                      style: TextStyle(
-                        color: AppTheme.mutedTextColor(context),
-                      ),
+                      style: TextStyle(color: AppTheme.mutedTextColor(context)),
                     ),
                   ],
                 ),
@@ -803,7 +855,12 @@ class _KhatmaScreenState extends State<KhatmaScreen> {
           ),
         ),
         trailing: IconButton(
-          tooltip: _localStr(context, 'فتح الصفحة', 'Open page', 'Ouvrir la page'),
+          tooltip: _localStr(
+            context,
+            'فتح الصفحة',
+            'Open page',
+            'Ouvrir la page',
+          ),
           onPressed: () => _openPage(page),
           icon: const Icon(Icons.menu_book_rounded),
         ),
@@ -828,14 +885,17 @@ class KhatmaPageScreen extends StatefulWidget {
 }
 
 class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
+  late int _currentPage;
   bool _isCompleted = false;
   bool _isLoading = true;
+  bool _isControlsVisible = false;
 
   @override
   void initState() {
     super.initState();
+    _currentPage = widget.page;
     _loadStatus();
-    QcfMushafAssets.warmUpPageWindow(widget.page, radius: 2);
+    QcfMushafAssets.warmUpPageWindow(_currentPage, radius: 2);
   }
 
   Future<void> _loadStatus() async {
@@ -843,18 +903,24 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
     if (!mounted) return;
 
     setState(() {
-      _isCompleted = progress.isPageCompleted(widget.page);
+      _isCompleted = progress.isPageCompleted(_currentPage);
       _isLoading = false;
     });
   }
 
   Future<void> _completeAndGoNext() async {
-    final progress = await KhatmaService.togglePage(widget.page, completed: true);
+    final progress = await KhatmaService.togglePage(
+      _currentPage,
+      completed: true,
+    );
     if (!mounted) return;
 
     if (progress.hasPlan) {
-      final currentDay = KhatmaService.dayForPage(widget.page, progress.planDays!);
-      if (widget.page == currentDay.endPage) {
+      final currentDay = KhatmaService.dayForPage(
+        _currentPage,
+        progress.planDays!,
+      );
+      if (_currentPage == currentDay.endPage) {
         if (mounted) {
           final locale = Localizations.localeOf(context).languageCode;
           final msg = locale == 'en'
@@ -878,23 +944,20 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
       }
     }
 
-    final nextPage = widget.page < quran.totalPagesCount
-        ? widget.page + 1
+    final nextPage = _currentPage < quran.totalPagesCount
+        ? _currentPage + 1
         : null;
     if (nextPage == null) {
       await _goBack();
       return;
     }
 
-    await Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => KhatmaPageScreen(
-          page: nextPage,
-          returnToKhatmaHomeOnBack: widget.returnToKhatmaHomeOnBack,
-        ),
-      ),
-    );
+    setState(() {
+      _currentPage = nextPage;
+      _isLoading = true;
+    });
+    _loadStatus();
+    QcfMushafAssets.warmUpPageWindow(_currentPage, radius: 2);
   }
 
   Future<void> _goBack() async {
@@ -911,28 +974,50 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
 
   Future<void> _toggleCompleted() async {
     final progress = await KhatmaService.togglePage(
-      widget.page,
+      _currentPage,
       completed: !_isCompleted,
     );
     if (!mounted) return;
 
     setState(() {
-      _isCompleted = progress.isPageCompleted(widget.page);
+      _isCompleted = progress.isPageCompleted(_currentPage);
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context).languageCode;
-    final pageLabel = locale == 'en' ? 'Page ${widget.page}'
-        : locale == 'fr' ? 'Page ${widget.page}'
-        : 'الصفحة ${widget.page}';
+    final pageLabel = locale == 'en'
+        ? 'Page $_currentPage'
+        : locale == 'fr'
+        ? 'Page $_currentPage'
+        : 'الصفحة $_currentPage';
     final markTooltip = _isCompleted
-        ? (locale == 'en' ? 'Unmark page' : locale == 'fr' ? 'Retirer la marque' : 'إزالة العلامة')
-        : (locale == 'en' ? 'Mark page' : locale == 'fr' ? 'Marquer la page' : 'علّم الصفحة');
-    final btnLabel = widget.page == quran.totalPagesCount
-        ? (locale == 'en' ? 'Last page completed' : locale == 'fr' ? 'Dernière page terminée' : 'تمت الصفحة الأخيرة')
-        : (locale == 'en' ? 'Done — go to next page' : locale == 'fr' ? 'Terminé — passer à la suivante' : 'تمت الصفحة وانتقل إلى التالية');
+        ? (locale == 'en'
+              ? 'Unmark page'
+              : locale == 'fr'
+              ? 'Retirer la marque'
+              : 'إزالة العلامة')
+        : (locale == 'en'
+              ? 'Mark page'
+              : locale == 'fr'
+              ? 'Marquer la page'
+              : 'علّم الصفحة');
+    final btnLabel = _currentPage == quran.totalPagesCount
+        ? (locale == 'en'
+              ? 'Last page completed'
+              : locale == 'fr'
+              ? 'Dernière page terminée'
+              : 'تمت الصفحة الأخيرة')
+        : (locale == 'en'
+              ? 'Done — go to next page'
+              : locale == 'fr'
+              ? 'Terminé — passer à la suivante'
+              : 'تمت الصفحة وانتقل إلى التالية');
+    final pageColor = AppTheme.isDark(context)
+        ? const Color(0xFF111914)
+        : const Color(0xFFFFFDF2);
+
     return PopScope<Object?>(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -940,46 +1025,168 @@ class _KhatmaPageScreenState extends State<KhatmaPageScreen> {
         unawaited(_goBack());
       },
       child: Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(title: Text(pageLabel)),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
-              child: QcfMushafPage(
-                pageNumber: widget.page,
-                juzNumber: _juzForPage(widget.page),
-                pageSummary: _pageSummary(widget.page),
+        backgroundColor: pageColor,
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isTwoPageMode =
+                          constraints.maxWidth > 600 &&
+                          constraints.maxWidth > constraints.maxHeight;
+                      Widget mushafContent;
+
+                      if (isTwoPageMode) {
+                        final rightPage = _currentPage % 2 != 0
+                            ? _currentPage
+                            : _currentPage - 1;
+                        final leftPage = rightPage + 1;
+
+                        mushafContent = Row(
+                          children: [
+                            Expanded(
+                              child: QcfMushafPage(
+                                pageNumber: rightPage,
+                                juzNumber: _juzForPage(rightPage),
+                                pageSummary: _pageSummary(rightPage),
+                              ),
+                            ),
+                            Container(
+                              width: 1,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.05),
+                                    Colors.transparent,
+                                    Colors.black.withValues(alpha: 0.05),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: leftPage <= quran.totalPagesCount
+                                  ? QcfMushafPage(
+                                      pageNumber: leftPage,
+                                      juzNumber: _juzForPage(leftPage),
+                                      pageSummary: _pageSummary(leftPage),
+                                    )
+                                  : const SizedBox(),
+                            ),
+                          ],
+                        );
+                      } else {
+                        mushafContent = QcfMushafPage(
+                          pageNumber: _currentPage,
+                          juzNumber: _juzForPage(_currentPage),
+                          pageSummary: _pageSummary(_currentPage),
+                        );
+                      }
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _isControlsVisible = !_isControlsVisible;
+                          });
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: SafeArea(
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(10, 8, 10, 12),
+                            child: mushafContent,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    top: _isControlsVisible ? 0 : -150,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      color: Theme.of(context).appBarTheme.backgroundColor,
+                      child: SafeArea(
+                        bottom: false,
+                        child: SizedBox(
+                          height: 56,
+                          child: Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.arrow_forward),
+                                color: Theme.of(
+                                  context,
+                                ).appBarTheme.foregroundColor,
+                                onPressed: _goBack,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  pageLabel,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).appBarTheme.foregroundColor,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    bottom: _isControlsVisible ? 0 : -200,
+                    left: 0,
+                    right: 0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, -5),
+                          ),
+                        ],
+                      ),
+                      child: SafeArea(
+                        top: false,
+                        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                        child: Row(
+                          children: [
+                            IconButton.filledTonal(
+                              tooltip: markTooltip,
+                              onPressed: _toggleCompleted,
+                              icon: Icon(
+                                _isCompleted
+                                    ? Icons.check_circle_rounded
+                                    : Icons.radio_button_unchecked_rounded,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: FilledButton.icon(
+                                onPressed: _completeAndGoNext,
+                                icon: const Icon(Icons.check_rounded),
+                                label: Text(btnLabel),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-        child: Row(
-          children: [
-            IconButton.filledTonal(
-              tooltip: markTooltip,
-              onPressed: _toggleCompleted,
-              icon: Icon(
-                _isCompleted
-                    ? Icons.check_circle_rounded
-                    : Icons.radio_button_unchecked_rounded,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: _completeAndGoNext,
-                icon: const Icon(Icons.check_rounded),
-                label: Text(btnLabel),
-              ),
-            ),
-          ],
-        ),
       ),
-    ),
     );
   }
-
 }
 
 int _juzForPage(int page) {

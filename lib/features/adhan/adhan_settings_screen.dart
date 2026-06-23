@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:quran_app/l10n/app_localizations.dart';
+import 'package:quran_app/core/permission_explanation_screen.dart';
 import 'package:quran_app/core/prayer_notification_service.dart';
 import 'package:quran_app/core/prayer_service.dart';
 import 'package:quran_app/core/theme.dart';
@@ -262,6 +263,10 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
   }
 
   Future<void> _requestNotifications() async {
+    if (!await _confirmPermissionRequest(PermissionExplanationType.notifications)) {
+      return;
+    }
+
     setState(() {
       _isRequestingNotifications = true;
     });
@@ -279,6 +284,10 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
   }
 
   Future<void> _requestExactAlarm() async {
+    if (!await _confirmPermissionRequest(PermissionExplanationType.exactAlarm)) {
+      return;
+    }
+
     setState(() {
       _isRequestingExactAlarm = true;
     });
@@ -296,6 +305,10 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
   }
 
   Future<void> _requestPolicyAccess() async {
+    if (!await _confirmPermissionRequest(PermissionExplanationType.dnd)) {
+      return;
+    }
+
     setState(() {
       _isRequestingPolicyAccess = true;
     });
@@ -320,6 +333,10 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
   }
 
   Future<void> _requestBatteryBypass() async {
+    if (!await _confirmPermissionRequest(PermissionExplanationType.battery)) {
+      return;
+    }
+
     setState(() {
       _isRequestingBattery = true;
     });
@@ -334,6 +351,11 @@ class _AdhanSettingsScreenState extends State<AdhanSettingsScreen> {
         });
       }
     }
+  }
+
+  Future<bool> _confirmPermissionRequest(PermissionExplanationType type) async {
+    final shouldContinue = await showPermissionExplanationScreen(context, type);
+    return mounted && shouldContinue;
   }
 
   Future<void> _rescheduleNotifications() async {

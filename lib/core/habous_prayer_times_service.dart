@@ -56,6 +56,7 @@ class HabousPrayerTimesService {
   ];
   static final Map<int, Future<String>> _officialHtmlRequests = {};
   static final Map<String, Future<String>> _officialDailyRequests = {};
+  static Future<Map<String, _HabousCityOption>>? _officialCityOptionsRequest;
 
   static bool _shouldUseLocalImmediately(PrayerLocation location) {
     return !location.coordinates.latitude.isFinite ||
@@ -67,7 +68,6 @@ class HabousPrayerTimesService {
     DateTime? date,
   }) async {
     final targetDate = date ?? DateTime.now();
-    final city = _nearestSupportedCity(location.coordinates);
 
     if (_shouldUseLocalImmediately(location)) {
       return _localTimes(location, targetDate).copyWith(
@@ -75,8 +75,16 @@ class HabousPrayerTimesService {
       );
     }
 
+    if (!PrayerService.isInMorocco(location.coordinates)) {
+      return _localTimes(location, targetDate).copyWith(
+        notice: location.notice,
+      );
+    }
+
+    final city = await _resolveOfficialCity(location);
     final cachedTimes = await _loadCachedTimes(city, targetDate);
-    if (cachedTimes != null) {
+    final shouldRefreshBeforeCache = _isSameDate(targetDate, DateTime.now());
+    if (!shouldRefreshBeforeCache && cachedTimes != null) {
       return cachedTimes.copyWith(notice: location.notice);
     }
 
@@ -85,6 +93,9 @@ class HabousPrayerTimesService {
       await _saveCachedTimes(city, targetDate, officialTimes.prayers);
       return officialTimes.copyWith(notice: _officialNotice(location, city));
     } catch (_) {
+      if (cachedTimes != null) {
+        return cachedTimes.copyWith(notice: location.notice);
+      }
       return _localTimes(location, targetDate).copyWith(
         notice:
             location.notice ??
@@ -99,6 +110,28 @@ class HabousPrayerTimesService {
   ) async {
     final display = await getTodayPrayerTimes(location, date: date);
     return momentsFromDisplay(display);
+  }
+
+  static Future<void> prefetchOfficialTimes(PrayerLocation location) async {
+    if (_shouldUseLocalImmediately(location) ||
+        !PrayerService.isInMorocco(location.coordinates)) {
+      return;
+    }
+
+    final city = await _resolveOfficialCity(location);
+    final html = await _fetchOfficialHtml(city);
+    await _saveMonthCachedTimes(city, DateTime.now(), html);
+
+    try {
+      final todayPrayers = _parseDailyPrayerTimes(
+        await _fetchOfficialDailyHtml(city, DateTime.now()),
+      );
+      if (todayPrayers != null) {
+        await _saveCachedTimes(city, DateTime.now(), todayPrayers);
+      }
+    } catch (_) {
+      // The monthly page cache remains enough for offline scheduling.
+    }
   }
 
   static Future<PrayerSchedule> getPrayerSchedule(
@@ -163,6 +196,7 @@ class HabousPrayerTimesService {
 
     if (prayers == null) {
       final html = await _fetchOfficialHtml(city);
+      await _saveMonthCachedTimes(city, date, html);
       prayers = _parsePrayerRow(html, date);
     }
     if (prayers == null) {
@@ -200,6 +234,27 @@ class HabousPrayerTimesService {
       return await request;
     } catch (_) {
       _officialDailyRequests.remove(requestKey);
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, _HabousCityOption>> _fetchOfficialCityOptions(
+    _HabousCity seedCity,
+  ) async {
+    final cachedRequest = _officialCityOptionsRequest;
+    if (cachedRequest != null) {
+      return cachedRequest;
+    }
+
+    final request = _fetchOfficialDailyHtml(seedCity, DateTime.now()).then(
+      _parseOfficialCityOptions,
+    );
+    _officialCityOptionsRequest = request;
+
+    try {
+      return await request;
+    } catch (_) {
+      _officialCityOptionsRequest = null;
       rethrow;
     }
   }
@@ -301,6 +356,7 @@ class HabousPrayerTimesService {
     DateTime date,
   ) {
     final times = PrayerService.getPrayerTimes(location.coordinates, date);
+    final applyMoroccoOffset = PrayerService.isInMorocco(location.coordinates);
     return PrayerTimesDisplay(
       cityName: location.name,
       sourceName: localSourceName,
@@ -311,32 +367,40 @@ class HabousPrayerTimesService {
         PrayerTimeDisplayItem(
           prayer: Prayer.fajr,
           name: PrayerService.getPrayerName(Prayer.fajr),
-          time: _formatAdjustedTime(times.fajr, Prayer.fajr),
+          time: _formatLocalTime(times.fajr, Prayer.fajr, applyMoroccoOffset),
         ),
         PrayerTimeDisplayItem(
           prayer: Prayer.sunrise,
           name: PrayerService.getPrayerName(Prayer.sunrise),
-          time: _formatAdjustedTime(times.sunrise, Prayer.sunrise),
+          time: _formatLocalTime(
+            times.sunrise,
+            Prayer.sunrise,
+            applyMoroccoOffset,
+          ),
         ),
         PrayerTimeDisplayItem(
           prayer: Prayer.dhuhr,
           name: PrayerService.getPrayerName(Prayer.dhuhr),
-          time: _formatAdjustedTime(times.dhuhr, Prayer.dhuhr),
+          time: _formatLocalTime(times.dhuhr, Prayer.dhuhr, applyMoroccoOffset),
         ),
         PrayerTimeDisplayItem(
           prayer: Prayer.asr,
           name: PrayerService.getPrayerName(Prayer.asr),
-          time: _formatAdjustedTime(times.asr, Prayer.asr),
+          time: _formatLocalTime(times.asr, Prayer.asr, applyMoroccoOffset),
         ),
         PrayerTimeDisplayItem(
           prayer: Prayer.maghrib,
           name: PrayerService.getPrayerName(Prayer.maghrib),
-          time: _formatAdjustedTime(times.maghrib, Prayer.maghrib),
+          time: _formatLocalTime(
+            times.maghrib,
+            Prayer.maghrib,
+            applyMoroccoOffset,
+          ),
         ),
         PrayerTimeDisplayItem(
           prayer: Prayer.isha,
           name: PrayerService.getPrayerName(Prayer.isha),
-          time: _formatAdjustedTime(times.isha, Prayer.isha),
+          time: _formatLocalTime(times.isha, Prayer.isha, applyMoroccoOffset),
         ),
       ],
     );
@@ -429,6 +493,35 @@ class HabousPrayerTimesService {
     await prefs.setString(_cacheKey(city, date), encoded);
   }
 
+  static Future<void> _saveMonthCachedTimes(
+    _HabousCity city,
+    DateTime monthDate,
+    String html,
+  ) async {
+    final monthTimes = _parsePrayerMonth(html, monthDate);
+    if (monthTimes.isEmpty) {
+      return;
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    for (final entry in monthTimes.entries) {
+      final encoded = jsonEncode({
+        'cityId': city.id,
+        'date': _dateKey(entry.key),
+        'prayers': entry.value
+            .map(
+              (item) => {
+                'prayerIndex': item.prayer.index,
+                'name': item.name,
+                'time': item.time,
+              },
+            )
+            .toList(),
+      });
+      await prefs.setString(_cacheKey(city, entry.key), encoded);
+    }
+  }
+
   static String _cacheKey(_HabousCity city, DateTime date) {
     return '${_cachePrefix}_${city.id}_${_dateKey(date)}';
   }
@@ -445,6 +538,11 @@ class HabousPrayerTimesService {
   }
 
   static List<PrayerTimeDisplayItem>? _parseDailyPrayerTimes(String html) {
+    final tableTimes = _parseDailyPrayerTable(html);
+    if (tableTimes != null) {
+      return tableTimes;
+    }
+
     final text = _cleanCell(html);
     final fajr = _extractLabeledTime(text, const ['الفجر', 'الصبح']);
     final sunrise = _extractLabeledTime(text, const ['الشروق']);
@@ -453,6 +551,203 @@ class HabousPrayerTimesService {
     final maghrib = _extractLabeledTime(text, const ['المغرب']);
     final isha = _extractLabeledTime(text, const ['العشاء']);
 
+    return _buildPrayerItems(
+      fajr: fajr,
+      sunrise: sunrise,
+      dhuhr: dhuhr,
+      asr: asr,
+      maghrib: maghrib,
+      isha: isha,
+    );
+  }
+
+  static List<PrayerTimeDisplayItem>? _parseDailyPrayerTable(String html) {
+    final tableMatch = RegExp(
+      r'''<table[^>]*class=["'][^"']*\bhoraire\b[^"']*["'][^>]*>(.*?)</table>''',
+      caseSensitive: false,
+      dotAll: true,
+    ).firstMatch(html);
+    final tableHtml = tableMatch?.group(1) ?? html;
+    final cells =
+        RegExp(
+              r'<t[dh][^>]*>(.*?)</t[dh]>',
+              caseSensitive: false,
+              dotAll: true,
+            )
+            .allMatches(tableHtml)
+            .map((match) => _cleanCell(match.group(1) ?? ''))
+            .where((cell) => cell.isNotEmpty)
+            .toList();
+
+    final timesByPrayer = <Prayer, String>{};
+    for (var index = 0; index < cells.length - 1; index++) {
+      final prayer = _prayerForLabel(cells[index]);
+      final time = _cleanTime(cells[index + 1]);
+      if (prayer != null && time != null) {
+        timesByPrayer[prayer] = time;
+        index++;
+      }
+    }
+
+    return _buildPrayerItems(
+      fajr: timesByPrayer[Prayer.fajr],
+      sunrise: timesByPrayer[Prayer.sunrise],
+      dhuhr: timesByPrayer[Prayer.dhuhr],
+      asr: timesByPrayer[Prayer.asr],
+      maghrib: timesByPrayer[Prayer.maghrib],
+      isha: timesByPrayer[Prayer.isha],
+    );
+  }
+
+  static Prayer? _prayerForLabel(String value) {
+    final label = _cleanCell(value).replaceAll(RegExp(r'[\s:：]+'), '');
+    if (label.contains('الفجر') || label.contains('الصبح')) {
+      return Prayer.fajr;
+    }
+    if (label.contains('الشروق')) {
+      return Prayer.sunrise;
+    }
+    if (label.contains('الظهر')) {
+      return Prayer.dhuhr;
+    }
+    if (label.contains('العصر')) {
+      return Prayer.asr;
+    }
+    if (label.contains('المغرب')) {
+      return Prayer.maghrib;
+    }
+    if (label.contains('العشاء')) {
+      return Prayer.isha;
+    }
+    return null;
+  }
+
+  static String? _extractLabeledTime(String text, List<String> labels) {
+    for (final label in labels) {
+      final escapedLabel = RegExp.escape(label);
+      final directMatch = RegExp(
+        '$escapedLabel\\s*[:：]?\\s*(?:\\|\\s*)*(\\d{1,2}:\\d{2})',
+      ).firstMatch(text);
+      if (directMatch != null) {
+        return _cleanTime(directMatch.group(1)!);
+      }
+
+      final looseMatch = RegExp(
+        '$escapedLabel[^0-9]{0,40}(\\d{1,2}:\\d{2})',
+      ).firstMatch(text);
+      if (looseMatch != null) {
+        return _cleanTime(looseMatch.group(1)!);
+      }
+    }
+
+    return null;
+  }
+
+  static List<PrayerTimeDisplayItem>? _parsePrayerRow(
+    String html,
+    DateTime date,
+  ) {
+    return _parsePrayerMonth(html, date)[
+        DateTime(date.year, date.month, date.day)];
+  }
+
+  static Map<DateTime, List<PrayerTimeDisplayItem>> _parsePrayerMonth(
+    String html,
+    DateTime monthDate,
+  ) {
+    final parsedRows = <_ParsedPrayerRow>[];
+    final parsed = <DateTime, List<PrayerTimeDisplayItem>>{};
+    final rows = RegExp(
+      r'<tr[^>]*>(.*?)</tr>',
+      caseSensitive: false,
+      dotAll: true,
+    ).allMatches(html);
+
+    for (final row in rows) {
+      final cells =
+          RegExp(
+                r'<t[dh][^>]*>(.*?)</t[dh]>',
+                caseSensitive: false,
+                dotAll: true,
+              )
+              .allMatches(row.group(1) ?? '')
+              .map((match) => _cleanCell(match.group(1) ?? ''))
+              .where((cell) => cell.isNotEmpty)
+              .toList();
+
+      if (cells.length < 9) {
+        continue;
+      }
+
+      final gregorianDay = int.tryParse(_numbersOnly(cells[2]));
+      if (gregorianDay == null ||
+          gregorianDay < 1 ||
+          gregorianDay >
+              DateTime(monthDate.year, monthDate.month + 1, 0).day) {
+        continue;
+      }
+
+      final fajr = _cleanTime(cells[3]);
+      final sunrise = _cleanTime(cells[4]);
+      final dhuhr = _cleanTime(cells[5]);
+      final asr = _cleanTime(cells[6]);
+      final maghrib = _cleanTime(cells[7]);
+      final isha = _cleanTime(cells[8]);
+      final prayerItems = _buildPrayerItems(
+        fajr: fajr,
+        sunrise: sunrise,
+        dhuhr: dhuhr,
+        asr: asr,
+        maghrib: maghrib,
+        isha: isha,
+      );
+
+      if (prayerItems == null) {
+        continue;
+      }
+
+      parsedRows.add(_ParsedPrayerRow(gregorianDay, prayerItems));
+    }
+
+    if (parsedRows.isEmpty) {
+      return parsed;
+    }
+
+    var monthCursor = DateTime(monthDate.year, monthDate.month);
+    final firstDay = parsedRows.first.gregorianDay;
+    var hasMonthRollover = false;
+    for (var index = 1; index < parsedRows.length; index++) {
+      if (parsedRows[index].gregorianDay <
+          parsedRows[index - 1].gregorianDay) {
+        hasMonthRollover = true;
+        break;
+      }
+    }
+    if (hasMonthRollover && firstDay > monthDate.day) {
+      monthCursor = DateTime(monthDate.year, monthDate.month - 1);
+    }
+
+    int? previousDay;
+    for (final row in parsedRows) {
+      if (previousDay != null && row.gregorianDay < previousDay) {
+        monthCursor = DateTime(monthCursor.year, monthCursor.month + 1);
+      }
+      parsed[DateTime(monthCursor.year, monthCursor.month, row.gregorianDay)] =
+          row.prayers;
+      previousDay = row.gregorianDay;
+    }
+
+    return parsed;
+  }
+
+  static List<PrayerTimeDisplayItem>? _buildPrayerItems({
+    required String? fajr,
+    required String? sunrise,
+    required String? dhuhr,
+    required String? asr,
+    required String? maghrib,
+    required String? isha,
+  }) {
     if ([fajr, sunrise, dhuhr, asr, maghrib, isha].any((time) => time == null)) {
       return null;
     }
@@ -489,113 +784,6 @@ class HabousPrayerTimesService {
         time: isha!,
       ),
     ];
-  }
-
-  static String? _extractLabeledTime(String text, List<String> labels) {
-    for (final label in labels) {
-      final escapedLabel = RegExp.escape(label);
-      final directMatch = RegExp(
-        '$escapedLabel\\s*[:：]?\\s*(?:\\|\\s*)*(\\d{1,2}:\\d{2})',
-      ).firstMatch(text);
-      if (directMatch != null) {
-        return _cleanTime(directMatch.group(1)!);
-      }
-
-      final looseMatch = RegExp(
-        '$escapedLabel[^0-9]{0,40}(\\d{1,2}:\\d{2})',
-      ).firstMatch(text);
-      if (looseMatch != null) {
-        return _cleanTime(looseMatch.group(1)!);
-      }
-    }
-
-    return null;
-  }
-
-  static List<PrayerTimeDisplayItem>? _parsePrayerRow(
-    String html,
-    DateTime date,
-  ) {
-    final rows = RegExp(
-      r'<tr[^>]*>(.*?)</tr>',
-      caseSensitive: false,
-      dotAll: true,
-    ).allMatches(html);
-
-    for (final row in rows) {
-      final cells =
-          RegExp(
-                r'<t[dh][^>]*>(.*?)</t[dh]>',
-                caseSensitive: false,
-                dotAll: true,
-              )
-              .allMatches(row.group(1) ?? '')
-              .map((match) => _cleanCell(match.group(1) ?? ''))
-              .where((cell) => cell.isNotEmpty)
-              .toList();
-
-      if (cells.length < 9) {
-        continue;
-      }
-
-      final gregorianDay = int.tryParse(_numbersOnly(cells[2]));
-      if (gregorianDay != date.day) {
-        continue;
-      }
-
-      final fajr = _cleanTime(cells[3]);
-      final sunrise = _cleanTime(cells[4]);
-      final dhuhr = _cleanTime(cells[5]);
-      final asr = _cleanTime(cells[6]);
-      final maghrib = _cleanTime(cells[7]);
-      final isha = _cleanTime(cells[8]);
-
-      if ([
-        fajr,
-        sunrise,
-        dhuhr,
-        asr,
-        maghrib,
-        isha,
-      ].any((time) => time == null)) {
-        continue;
-      }
-
-      return [
-        PrayerTimeDisplayItem(
-          prayer: Prayer.fajr,
-          name: PrayerService.getPrayerName(Prayer.fajr),
-          time: fajr!,
-        ),
-        PrayerTimeDisplayItem(
-          prayer: Prayer.sunrise,
-          name: PrayerService.getPrayerName(Prayer.sunrise),
-          time: sunrise!,
-        ),
-        PrayerTimeDisplayItem(
-          prayer: Prayer.dhuhr,
-          name: PrayerService.getPrayerName(Prayer.dhuhr),
-          time: dhuhr!,
-        ),
-        PrayerTimeDisplayItem(
-          prayer: Prayer.asr,
-          name: PrayerService.getPrayerName(Prayer.asr),
-          time: asr!,
-        ),
-        PrayerTimeDisplayItem(
-          prayer: Prayer.maghrib,
-          name: PrayerService.getPrayerName(Prayer.maghrib),
-          time: maghrib!,
-        ),
-        PrayerTimeDisplayItem(
-          prayer: Prayer.isha,
-          name: PrayerService.getPrayerName(Prayer.isha),
-          time: isha!,
-        ),
-      ];
-    }
-
-    return null;
   }
 
   static String _cleanCell(String value) {
@@ -650,7 +838,14 @@ class HabousPrayerTimesService {
     return '${twoDigits(dateTime.hour)}:${twoDigits(dateTime.minute)}';
   }
 
-  static String _formatAdjustedTime(DateTime dateTime, Prayer prayer) {
+  static String _formatLocalTime(
+    DateTime dateTime,
+    Prayer prayer,
+    bool applyMoroccoOffset,
+  ) {
+    if (!applyMoroccoOffset) {
+      return _formatTime(dateTime);
+    }
     return _formatTime(dateTime.add(_moroccoFallbackOffset(prayer)));
   }
 
@@ -670,6 +865,79 @@ class HabousPrayerTimesService {
       case Prayer.none:
         return Duration.zero;
     }
+  }
+
+  static Future<_HabousCity> _resolveOfficialCity(
+    PrayerLocation location,
+  ) async {
+    final nearestCity = _nearestSupportedCity(location.coordinates);
+    final normalizedLocationName = _normalizeCityName(location.name);
+    if (normalizedLocationName.isEmpty) {
+      return nearestCity;
+    }
+
+    final bundledCity = _findBundledCityByName(normalizedLocationName);
+    if (bundledCity != null) {
+      return bundledCity;
+    }
+
+    try {
+      final officialOptions = await _fetchOfficialCityOptions(nearestCity);
+      final option = officialOptions[normalizedLocationName];
+      if (option != null) {
+        return option.toCity(location.coordinates);
+      }
+    } catch (_) {
+      // Keep the offline-friendly nearest-city behavior when Habous is unreachable.
+    }
+
+    return nearestCity;
+  }
+
+  static _HabousCity? _findBundledCityByName(String normalizedName) {
+    for (final city in _habousCities) {
+      if (_normalizeCityName(city.name) == normalizedName) {
+        return city;
+      }
+    }
+    return null;
+  }
+
+  static Map<String, _HabousCityOption> _parseOfficialCityOptions(
+    String html,
+  ) {
+    final options = <String, _HabousCityOption>{};
+    final matches = RegExp(
+      r'''<option\b[^>]*\bvalue\s*=\s*["']?[^"'>]*[?&]ville=(\d+)[^>]*>(.*?)</option>''',
+      caseSensitive: false,
+      dotAll: true,
+    ).allMatches(html);
+
+    for (final match in matches) {
+      final id = int.tryParse(match.group(1) ?? '');
+      final name = _cleanCell(match.group(2) ?? '');
+      final normalizedName = _normalizeCityName(name);
+      if (id != null && normalizedName.isNotEmpty) {
+        options[normalizedName] = _HabousCityOption(id, name);
+      }
+    }
+
+    return options;
+  }
+
+  static String _normalizeCityName(String value) {
+    return _cleanCell(value)
+        .toLowerCase()
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670]'), '')
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا')
+        .replaceAll('ٱ', 'ا')
+        .replaceAll('ى', 'ي')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ـ', '')
+        .replaceAll(RegExp(r'[^a-z0-9\u0600-\u06FF]+'), ' ')
+        .trim();
   }
 
   static _HabousCity _nearestSupportedCity(Coordinates coordinates) {
@@ -719,8 +987,10 @@ class HabousPrayerTimesService {
     _HabousCity(15, 'تطوان', 35.5785, -5.3684),
     _HabousCity(16, 'العرائش', 35.1932, -6.1557),
     _HabousCity(18, 'شفشاون', 35.1714, -5.2697),
+    _HabousCity(21, 'القصر الكبير', 35.0004, -5.9038),
     _HabousCity(23, 'الحسيمة', 35.2493, -3.9371),
     _HabousCity(31, 'وجدة', 34.6814, -1.9086),
+    _HabousCity(38, 'تاوريرت', 34.4073, -2.8973),
     _HabousCity(39, 'الناظور', 35.1681, -2.9335),
     _HabousCity(58, 'الدار البيضاء', 33.5731, -7.5898),
     _HabousCity(59, 'المحمدية', 33.6861, -7.3829),
@@ -768,4 +1038,27 @@ class _HabousCity {
   final String name;
   final double latitude;
   final double longitude;
+}
+
+class _HabousCityOption {
+  const _HabousCityOption(this.id, this.name);
+
+  final int id;
+  final String name;
+
+  _HabousCity toCity(Coordinates coordinates) {
+    return _HabousCity(
+      id,
+      name,
+      coordinates.latitude,
+      coordinates.longitude,
+    );
+  }
+}
+
+class _ParsedPrayerRow {
+  const _ParsedPrayerRow(this.gregorianDay, this.prayers);
+
+  final int gregorianDay;
+  final List<PrayerTimeDisplayItem> prayers;
 }

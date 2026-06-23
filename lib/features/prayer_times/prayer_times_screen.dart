@@ -2,6 +2,7 @@ import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:quran_app/core/habous_prayer_times_service.dart';
+import 'package:quran_app/core/permission_explanation_screen.dart';
 import 'package:quran_app/core/prayer_service.dart';
 import 'package:quran_app/core/theme.dart';
 import 'package:quran_app/l10n/app_localizations.dart';
@@ -17,6 +18,7 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   PrayerTimesDisplay? _times;
   String? _errorMessage;
   bool _isLoading = true;
+  bool _locationExplanationShown = false;
 
   @override
   void initState() {
@@ -31,6 +33,22 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
     });
 
     try {
+      if (!_locationExplanationShown) {
+        final shouldContinue = await showPermissionExplanationScreen(
+          context,
+          PermissionExplanationType.location,
+        );
+        if (!mounted) return;
+        if (!shouldContinue) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = AppLocalizations.of(context)!.locationPermissionNeeded;
+          });
+          return;
+        }
+        _locationExplanationShown = true;
+      }
+
       final location = await PrayerService.getBestAvailableLocation();
       final times = await HabousPrayerTimesService.getTodayPrayerTimes(location);
       if (!mounted) return;
@@ -280,15 +298,81 @@ class _PrayerTimesScreenState extends State<PrayerTimesScreen> {
   }
 
   Widget _buildSourceNote(PrayerTimesDisplay times, AppLocalizations l10n) {
-    return Text(
-      times.isOfficial ? l10n.officialSourceNote : l10n.fallbackSourceNote,
-      textAlign: TextAlign.center,
-      style: TextStyle(
-        color: AppTheme.mutedTextColor(context),
-        fontSize: 12,
-        height: 1.5,
+    final locale = Localizations.localeOf(context).languageCode;
+    final details = _sourceAccuracyDetails(locale);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppTheme.elevatedSurfaceColor(context),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: AppTheme.primaryColor.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            times.isOfficial ? l10n.officialSourceNote : l10n.fallbackSourceNote,
+            style: TextStyle(
+              color: AppTheme.primaryTextColor(context),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ...details.map(
+            (line) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(
+                    Icons.info_outline_rounded,
+                    color: AppTheme.primaryColor,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      line,
+                      style: TextStyle(
+                        color: AppTheme.mutedTextColor(context),
+                        fontSize: 12,
+                        height: 1.45,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  List<String> _sourceAccuracyDetails(String locale) {
+    return switch (locale) {
+      'ar' => const [
+        'داخل المغرب: المواقيت من وزارة الأوقاف والشؤون الإسلامية عند توفر الإنترنت.',
+        'خارج المغرب: يتم الحساب حسب الموقع الجغرافي بطريقة فلكية.',
+        'قد تختلف المواقيت بدقائق قليلة حسب الطريقة المحلية المعتمدة.',
+      ],
+      'fr' => const [
+        'Au Maroc : les horaires proviennent du Ministère des Habous lorsque Internet est disponible.',
+        'Hors du Maroc : les horaires sont calculés astronomiquement selon votre position.',
+        'Les horaires peuvent varier de quelques minutes selon la méthode locale.',
+      ],
+      _ => const [
+        'Inside Morocco: prayer times come from the Ministry of Awqaf when internet is available.',
+        'Outside Morocco: times are calculated astronomically from your geographic location.',
+        'Times may differ by a few minutes depending on the local method.',
+      ],
+    };
   }
 
   Widget _buildErrorState(AppLocalizations l10n) {

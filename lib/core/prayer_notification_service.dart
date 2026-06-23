@@ -651,6 +651,8 @@ class PrayerNotificationService {
     final location = _locationFromCoordinates(coordinates);
     final reminderDetails = _reminderNotificationDetails();
 
+    await _prefetchOfficialTimesIfPossible(location);
+
     await _cancelExistingPrayerReminders(now);
     await _cancelExistingAdhanAlerts(now);
 
@@ -788,6 +790,20 @@ class PrayerNotificationService {
     }
   }
 
+  static Future<void> _prefetchOfficialTimesIfPossible(
+    PrayerLocation location,
+  ) async {
+    if (!PrayerService.isInMorocco(location.coordinates)) {
+      return;
+    }
+
+    try {
+      await HabousPrayerTimesService.prefetchOfficialTimes(location);
+    } catch (_) {
+      // Scheduling remains available through existing cache or local fallback.
+    }
+  }
+
   static Future<void> _rescheduleStoredAdhanAlerts({
     Set<Prayer>? prayers,
   }) async {
@@ -802,6 +818,8 @@ class PrayerNotificationService {
     final androidScheduleMode = await _androidScheduleMode();
     final adhanSettings = await loadAdhanSettings();
     final location = _locationFromCoordinates(coordinates);
+
+    await _prefetchOfficialTimesIfPossible(location);
 
     await _cancelExistingAdhanAlerts(now, prayers: prayers);
 
@@ -978,6 +996,7 @@ class PrayerNotificationService {
     final scheduledDay = prefs.getInt(_lastScheduledDayKey);
     final scheduledLatitude = prefs.getDouble(_lastScheduledLatitudeKey);
     final scheduledLongitude = prefs.getDouble(_lastScheduledLongitudeKey);
+    final lastScheduleWasOfficial = prefs.getBool(_lastScheduleOfficialKey);
     final scheduledAdhanSound = prefs.getString(_lastScheduleAdhanSoundKey);
     final scheduledAdhanVolume = prefs.getDouble(_lastScheduleAdhanVolumeKey);
     final currentAdhanSettings = await loadAdhanSettings();
@@ -989,6 +1008,10 @@ class PrayerNotificationService {
         scheduledLongitude == null ||
         scheduledAdhanSound != currentAdhanSound ||
         scheduledAdhanVolume != currentAdhanVolume) {
+      return false;
+    }
+
+    if (PrayerService.isInMorocco(coordinates) && lastScheduleWasOfficial != true) {
       return false;
     }
 

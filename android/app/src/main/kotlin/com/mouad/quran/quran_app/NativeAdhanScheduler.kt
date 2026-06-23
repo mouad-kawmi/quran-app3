@@ -50,8 +50,17 @@ object NativeAdhanScheduler {
         volume: Double,
     ): Boolean {
         if (triggerAtMillis <= System.currentTimeMillis()) return false
+        val scheduled = scheduleAlarm(
+            context,
+            id,
+            triggerAtMillis,
+            prayerName,
+            rawResourceName,
+            filePath,
+            volume,
+        )
+        if (!scheduled) return false
         saveAlarm(context, id, triggerAtMillis, prayerName, rawResourceName, filePath, volume)
-        scheduleAlarm(context, id, triggerAtMillis, prayerName, rawResourceName, filePath, volume)
         return true
     }
 
@@ -64,7 +73,7 @@ object NativeAdhanScheduler {
         timeoutAfterMillis: Long,
     ): Boolean {
         if (triggerAtMillis <= System.currentTimeMillis()) return false
-        saveNotificationAlarm(
+        val scheduled = scheduleNotificationAlarm(
             context,
             id,
             triggerAtMillis,
@@ -72,7 +81,8 @@ object NativeAdhanScheduler {
             body,
             timeoutAfterMillis,
         )
-        scheduleNotificationAlarm(
+        if (!scheduled) return false
+        saveNotificationAlarm(
             context,
             id,
             triggerAtMillis,
@@ -118,7 +128,7 @@ object NativeAdhanScheduler {
                 continue
             }
 
-            scheduleAlarm(
+            val scheduled = scheduleAlarm(
                 context,
                 id,
                 triggerAtMillis,
@@ -127,6 +137,9 @@ object NativeAdhanScheduler {
                 filePath.orEmpty(),
                 volume,
             )
+            if (!scheduled) {
+                removeAlarm(context, id)
+            }
         }
 
         val notificationIds = prefs.getStringSet(NOTIFICATION_IDS_KEY, emptySet()).orEmpty().toList()
@@ -145,7 +158,7 @@ object NativeAdhanScheduler {
                 continue
             }
 
-            scheduleNotificationAlarm(
+            val scheduled = scheduleNotificationAlarm(
                 context,
                 id,
                 triggerAtMillis,
@@ -153,6 +166,9 @@ object NativeAdhanScheduler {
                 body,
                 timeoutAfterMillis,
             )
+            if (!scheduled) {
+                removeNotificationAlarm(context, id)
+            }
         }
     }
 
@@ -208,7 +224,7 @@ object NativeAdhanScheduler {
         rawResourceName: String,
         filePath: String,
         volume: Double,
-    ) {
+    ): Boolean {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent = pendingIntent(
             context = context,
@@ -220,19 +236,8 @@ object NativeAdhanScheduler {
             volume = volume,
         )
 
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    triggerAtMillis,
-                    pendingIntent,
-                )
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-            }
-        } catch (_: SecurityException) {
-            scheduleAlarmClockOrInexact(context, alarmManager, triggerAtMillis, id, pendingIntent)
-        }
+        return scheduleExactWakeup(alarmManager, triggerAtMillis, pendingIntent) ||
+            scheduleAlarmClock(context, alarmManager, triggerAtMillis, id, pendingIntent)
     }
 
     private fun scheduleNotificationAlarm(
@@ -242,7 +247,7 @@ object NativeAdhanScheduler {
         title: String,
         body: String,
         timeoutAfterMillis: Long,
-    ) {
+    ): Boolean {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val pendingIntent = notificationPendingIntent(
             context = context,
@@ -253,28 +258,46 @@ object NativeAdhanScheduler {
             timeoutAfterMillis = timeoutAfterMillis,
         )
 
+        return scheduleExactWakeup(alarmManager, triggerAtMillis, pendingIntent) ||
+            scheduleAlarmClock(context, alarmManager, triggerAtMillis, id, pendingIntent)
+    }
+
+    private fun scheduleExactWakeup(
+        alarmManager: AlarmManager,
+        triggerAtMillis: Long,
+        operation: PendingIntent,
+    ): Boolean {
         try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+                !alarmManager.canScheduleExactAlarms()
+            ) {
+                return false
+            }
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerAtMillis,
-                    pendingIntent,
+                    operation,
                 )
             } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
             }
+            return true
         } catch (_: SecurityException) {
-            scheduleAlarmClockOrInexact(context, alarmManager, triggerAtMillis, id, pendingIntent)
+            return false
+        } catch (_: RuntimeException) {
+            return false
         }
     }
 
-    private fun scheduleAlarmClockOrInexact(
+    private fun scheduleAlarmClock(
         context: Context,
         alarmManager: AlarmManager,
         triggerAtMillis: Long,
         id: Int,
         operation: PendingIntent,
-    ) {
+    ): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             try {
                 val showIntent = appLaunchPendingIntent(context, id) ?: operation
@@ -282,21 +305,13 @@ object NativeAdhanScheduler {
                     AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent),
                     operation,
                 )
-                return
+                return true
             } catch (_: RuntimeException) {
-                // Fall through to the best inexact option available on this device.
+                return false
             }
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                operation,
-            )
-        } else {
-            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation)
-        }
+        return false
     }
 
     private fun saveAlarm(

@@ -12,7 +12,10 @@ import 'package:quran_app/l10n/app_localizations.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final settings = AppSettingsController();
-  await _prepareApp(settings);
+
+  // Start loading settings without blocking runApp — app starts instantly
+  // and rebuilds via AnimatedBuilder once settings are ready.
+  unawaited(_prepareApp(settings));
 
   runApp(QuranApp(settings: settings));
 }

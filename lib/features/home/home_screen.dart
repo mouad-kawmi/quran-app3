@@ -274,11 +274,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _pushAndRefreshReading(Widget screen) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => screen),
-    );
+  Future<void> _pushAndRefreshReading(
+    Widget screen, {
+    bool rootNavigator = false,
+  }) async {
+    final nav = rootNavigator
+        ? Navigator.of(context, rootNavigator: true)
+        : Navigator.of(context);
+    await nav.push(MaterialPageRoute(builder: (context) => screen));
     if (!mounted) return;
     await _loadReadingProgress();
   }
@@ -298,17 +301,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openKhatmaProgress() {
-    final khatma = _khatmaProgress;
-    final nextPage = khatma?.nextPage;
-    if (khatma?.hasPlan == true && nextPage != null) {
-      unawaited(
-        _pushAndRefreshReading(
-          KhatmaPageScreen(page: nextPage, returnToKhatmaHomeOnBack: true),
-        ),
-      );
-      return;
-    }
-
     _openKhatma();
   }
 
@@ -381,19 +373,21 @@ class _HomeScreenState extends State<HomeScreen> {
   void _updateDateLabels(DateTime now) {
     _dateLabelDay = DateTime(now.year, now.month, now.day);
     _hijriDate = PrayerService.getHijriDate(_currentLanguageCode);
-    
+
     final locale = _currentLanguageCode;
     String formatSpecifier;
     if (locale == 'ar') {
-        formatSpecifier = 'EEEE، d MMMM yyyy';
+      formatSpecifier = 'EEEE، d MMMM yyyy';
     } else if (locale == 'fr') {
-        formatSpecifier = 'EEEE d MMMM yyyy';
+      formatSpecifier = 'EEEE d MMMM yyyy';
     } else {
-        formatSpecifier = 'EEEE, d MMMM yyyy';
+      formatSpecifier = 'EEEE, d MMMM yyyy';
     }
-    
+
     String formatted = DateFormat(formatSpecifier, locale).format(now);
-    _gregorianDate = locale == 'ar' ? PrayerService.toWesternDigits(formatted) : formatted;
+    _gregorianDate = locale == 'ar'
+        ? PrayerService.toWesternDigits(formatted)
+        : formatted;
   }
 
   void _updateCountdownSnapshot(
@@ -619,47 +613,46 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.5),
-                    width: 1.5,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
+            ),
+            child: const Icon(
+              Icons.book_outlined,
+              color: Colors.white,
+              size: 30,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  AppLocalizations.of(context)!.appTitle,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: const Icon(
-                  Icons.book_outlined,
-                  color: Colors.white,
-                  size: 30,
+                Text(
+                  AppLocalizations.of(context)!.appSubtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 14,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    AppLocalizations.of(context)!.appTitle,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    AppLocalizations.of(context)!.appSubtitle,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.8),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -928,14 +921,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildLocationBadge() {
     final location = _prayerLocation;
-    
+
     String locationName;
     if (_isLoadingPrayerTimes) {
       locationName = AppLocalizations.of(context)!.detectingLocation;
     } else if (location?.isFallback == true) {
       locationName = AppLocalizations.of(context)!.fallbackCityName;
     } else {
-      locationName = location?.name != null ? PrayerService.getLocalizedCityName(context, location!.name) : AppLocalizations.of(context)!.location;
+      locationName = location?.name != null
+          ? PrayerService.getLocalizedCityName(context, location!.name)
+          : AppLocalizations.of(context)!.location;
     }
 
     return InkWell(

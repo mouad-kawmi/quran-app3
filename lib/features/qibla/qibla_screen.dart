@@ -4,6 +4,7 @@ import 'package:adhan/adhan.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:quran_app/core/permission_explanation_screen.dart';
 import 'package:quran_app/core/prayer_service.dart';
 import 'package:quran_app/core/theme.dart';
 
@@ -107,6 +108,7 @@ class _QiblaScreenState extends State<QiblaScreen> {
   double? _qiblaDirection;
   String? _errorMessage;
   bool _isLoading = true;
+  bool _locationExplanationShown = false;
 
   @override
   void initState() {
@@ -121,6 +123,22 @@ class _QiblaScreenState extends State<QiblaScreen> {
     });
 
     try {
+      if (!_locationExplanationShown) {
+        final shouldContinue = await showPermissionExplanationScreen(
+          context,
+          PermissionExplanationType.location,
+        );
+        if (!mounted) return;
+        if (!shouldContinue) {
+          setState(() {
+            _errorMessage = _t('perm_needed');
+            _isLoading = false;
+          });
+          return;
+        }
+        _locationExplanationShown = true;
+      }
+
       final location = await PrayerService.getBestAvailableLocation();
       final qibla = Qibla(location.coordinates);
       if (!mounted) return;
