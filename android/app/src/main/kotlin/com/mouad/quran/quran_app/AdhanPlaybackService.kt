@@ -157,27 +157,38 @@ class AdhanPlaybackService : Service() {
 
     private fun applyAlarmVolume(volume: Double) {
         val manager = audioManager ?: return
-        val currentVolume = manager.getStreamVolume(AudioManager.STREAM_ALARM)
-        val maxVolume = manager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
-        if (maxVolume <= 0) return
+        try {
+            val currentVolume = manager.getStreamVolume(AudioManager.STREAM_ALARM)
+            val maxVolume = manager.getStreamMaxVolume(AudioManager.STREAM_ALARM)
+            if (maxVolume <= 0) return
 
-        val targetVolume = (maxVolume * volume.coerceIn(0.1, 1.0))
-            .roundToInt()
-            .coerceIn(1, maxVolume)
-        if (currentVolume == targetVolume) return
+            val targetVolume = (maxVolume * volume.coerceIn(0.1, 1.0))
+                .roundToInt()
+                .coerceIn(1, maxVolume)
+            if (currentVolume == targetVolume) return
 
-        previousAlarmVolume = previousAlarmVolume ?: currentVolume
-        manager.setStreamVolume(
-            AudioManager.STREAM_ALARM,
-            targetVolume,
-            0,
-        )
+            previousAlarmVolume = previousAlarmVolume ?: currentVolume
+            manager.setStreamVolume(
+                AudioManager.STREAM_ALARM,
+                targetVolume,
+                0,
+            )
+        } catch (e: SecurityException) {
+            // Missing ACCESS_NOTIFICATION_POLICY when DND is enabled
+            previousAlarmVolume = null
+        } catch (e: Exception) {
+            previousAlarmVolume = null
+        }
     }
 
     private fun restoreAlarmVolume() {
         val previousVolume = previousAlarmVolume ?: return
         val manager = audioManager ?: return
-        manager.setStreamVolume(AudioManager.STREAM_ALARM, previousVolume, 0)
+        try {
+            manager.setStreamVolume(AudioManager.STREAM_ALARM, previousVolume, 0)
+        } catch (e: Exception) {
+            // Ignored
+        }
         previousAlarmVolume = null
     }
 
